@@ -24,6 +24,8 @@ class Cart:
         result = db_object.fetch_data(query, val)
         
         if result:
-            return result[0]["ID"]  # cartId
+            return result[0]["ID"]  
         
         return None
+    
+    

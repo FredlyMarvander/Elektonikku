@@ -1,33 +1,42 @@
+from User import User
 from tkinter import *
-from PIL import ImageTk, Image
+from tkinter import ttk
+from user_service import user_services
 
-window = Tk()
-window.title("ElektronikKu")
 
-window.state("zoomed")  
-width = window.winfo_screenwidth()
-height = window.winfo_screenheight()
-bg_img = Image.open("background.jpg")
-bg_img = bg_img.resize((width, height))         
-bg_photo = ImageTk.PhotoImage(bg_img)
 
-canvas = Canvas(window, width=width, height=height)
-canvas.pack(fill="both", expand=True)
 
-canvas.create_image(0,0, image=bg_photo, anchor="nw")
+class MainApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title = "Elektronikku"
+        self.root.geometry("800x600")
+        ttk.Label(self.root, text="Welcome to Elektronikku", font=("Helvetica", 16)).pack(pady=20)
+        self.entry_username = ttk.Entry(self.root)
+        self.entry_username.pack(pady=10)
+        self.entry_password = ttk.Entry(self.root, show="*")
+        self.entry_password.pack(pady=10)
+        self.btn_login = ttk.Button(self.root, text="Login", command=self.proses_login)
+        self.btn_login.pack(pady=20)
 
-canvas.create_text(width//2, 100, anchor="center", text="Elektronikku", fill="#D7C097", font=("Roboto", 64))
+    
+    
+    def proses_login(self):
+        username = self.entry_username.get()
+        password = self.entry_password.get()
+        print("Attempting login with:", username, password)
+        if (user_services.login(username, password)):
+            self.clear_window()
+            self.home_screen()
+            
+    def home_screen(self):
+        ttk.Label(self.root, text="Home Screen", font=("Helvetica", 16)).pack(pady=20)
+        # Additional home screen widgets can be added here
 
-button = Button(window, 
-                text="Click Me", 
-                font=("Arial", 20, "bold"),
-                bg="#4B7BE5",     
-                fg="white",
-                activebackground="#3A67C8",
-                activeforeground="white",
-                relief="flat",
-                padx=20,
-                pady=10)
-button_window = canvas.create_window(width//3, 300, anchor="center", window=button)
+    def clear_window(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
 
-window.mainloop()
+root = Tk()
+app = MainApp(root)
+root.mainloop()
