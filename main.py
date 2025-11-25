@@ -10,8 +10,11 @@ import requests
 from io import BytesIO
 import threading
 
+
+
 class MainApp:
     def __init__(self, root):
+
         self.root = root
         self.root.title("Elektronikku")
         self.root.state("zoomed")
@@ -22,8 +25,6 @@ class MainApp:
         self.buttonAdmin.pack()
         self.buttonCustomer = ttk.Button(self.root, text="Customer", command=self.customer)
         self.buttonCustomer.pack()
-        self.buttonRegister = ttk.Button(self.root, text="Register as Customer", command=self.register_customer_screen)
-        self.buttonRegister.pack(pady=10)
 
     def admin(self):
         self.clear_window()
@@ -48,52 +49,6 @@ class MainApp:
         self.entry_password.pack()
         self.btn_login = ttk.Button(self.root, text="Login", command=self.proses_login_customer)
         self.btn_login.pack(pady=20)
-
-    def register_customer_screen(self):
-        self.clear_window()
-        ttk.Label(self.root, text="Customer Registration", font=("Helvetica", 16)).pack(pady=20)
-        ttk.Label(self.root, text="Username", font=("Helvetica", 16)).pack(pady=10)
-        self.entry_username = ttk.Entry(self.root)
-        self.entry_username.pack()
-        ttk.Label(self.root, text="Email", font=("Helvetica", 16)).pack(pady=10)
-        self.entry_email = ttk.Entry(self.root)
-        self.entry_email.pack()
-        ttk.Label(self.root, text="Password", font=("Helvetica", 16)).pack(pady=10)
-        self.entry_password = ttk.Entry(self.root, show="*")
-        self.entry_password.pack()
-        ttk.Label(self.root, text="Balance", font=("Helvetica", 16)).pack(pady=10)
-        self.entry_balance = ttk.Entry(self.root)
-        self.entry_balance.pack()
-        self.btn_register = ttk.Button(self.root, text="Register", command=self.proses_register_customer)
-        self.btn_register.pack(pady=20)
-
-    def proses_register_customer(self):
-        username = self.entry_username.get()
-        email = self.entry_email.get()
-        password = self.entry_password.get()
-        balance_str = self.entry_balance.get()
-        
-        if not username or not email or not password or not balance_str:
-            messagebox.showerror("Error", "All fields are required!")
-            return
-        
-        try:
-            balance = float(balance_str)
-            if balance < 0:
-                messagebox.showerror("Error", "Balance must be a non-negative number!")
-                return
-        except ValueError:
-            messagebox.showerror("Error", "Balance must be a valid number!")
-            return
-        
-        # Asumsikan user_services memiliki metode register_customer dengan parameter balance
-        # Jika tidak, Anda perlu menambahkannya di user_service.py
-        if user_services.register_customer(username, email, password, balance):
-            messagebox.showinfo("Success", "Registration successful! Please login.")
-            self.clear_window()
-            self.__init__(self.root)  # Kembali ke layar utama
-        else:
-            messagebox.showerror("Error", "Registration failed. Email might already exist.")
 
     def proses_login_customer(self):
         email = self.entry_email.get()
