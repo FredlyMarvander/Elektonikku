@@ -80,6 +80,31 @@ class MainApp:
         self.btn_logout.pack(pady=20)
         self.btn_view_products = ttk.Button(self.root, text="View Products", command=self.view_products)
         self.btn_view_products.pack(pady=10)
+        self.btn_view_customers = ttk.Button(self.root, text="View Customers", command=self.view_customers)
+        self.btn_view_customers.pack(pady=10)
+
+    def view_customers(self):
+        self.clear_window()
+        self.tableCustomers = ttk.Treeview(self.root, columns=("No", "Username", "Email", "Balance"), show="headings")
+        self.tableCustomers.heading("No", text="ID")
+        self.tableCustomers.heading("Username", text="Username")
+        self.tableCustomers.heading("Email", text="Email")
+        self.tableCustomers.heading("Balance", text="Balance")
+ 
+        self.tableCustomers.column("No", width=50, anchor="center")
+        self.tableCustomers.column("Username", width=150, anchor="center")
+        self.tableCustomers.column("Email", width=300, anchor="center")
+        self.tableCustomers.column("Balance", width=100, anchor="center")
+
+        self.tableCustomers.pack(fill="both", expand=True)
+        self.load_data_customers()
+
+    def load_data_customers(self):
+        self.dataCustomers = user_services.getCustomers()
+        i = 1
+
+        for customer in self.dataCustomers:
+            self.tableCustomers.insert("", "end", values=(i, customer[1], customer[2], customer[5]))
     
     def view_products(self):
         self.clear_window()
