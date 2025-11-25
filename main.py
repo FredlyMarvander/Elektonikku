@@ -49,6 +49,45 @@ class MainApp:
         self.entry_password.pack()
         self.btn_login = ttk.Button(self.root, text="Login", command=self.proses_login_customer)
         self.btn_login.pack(pady=20)
+        self.btn_register = ttk.Button(self.root, text="Register", command=self.register_user)
+        self.btn_register.pack(pady=30)
+
+    def register_user(self):
+        self.clear_window()
+        ttk.Label(self.root, text="User Registration", font=("Helvetica", 16)).pack(pady=20)
+        ttk.Label(self.root, text="Username", font=("Helvetica", 14)).pack(pady=10)
+        self.entry_username = ttk.Entry(self.root)
+        self.entry_username.pack()
+        ttk.Label(self.root, text="Email", font=("Helvetica", 14)).pack(pady=10)
+        self.entry_email = ttk.Entry(self.root)
+        self.entry_email.pack()
+        ttk.Label(self.root, text="Password", font=("Helvetica", 14)).pack(pady=10)
+        self.entry_password = ttk.Entry(self.root, show="*")
+        self.entry_password.pack()
+        ttk.Label(self.root, text="Balance", font=("Helvetica", 14)).pack(pady=10)
+        self.entry_balance = ttk.Entry(self.root)
+        self.entry_balance.pack()
+        self.btn_register = ttk.Button(self.root, text="Register", command=self.process_register)
+        self.btn_register.pack(pady=20)
+
+    def process_register(self):
+        username = self.entry_username.get()
+        email = self.entry_email.get()
+        password = self.entry_password.get()
+        role = "customer"  # Default role for regular users
+        balance = self.entry_balance.get()    # Default balance for new users
+
+        # Check if email already exists
+        existed_email = user_services.getUserByEmail(email)
+        if existed_email:
+            messagebox.showerror("Error", "Email already exists!")
+            return
+
+        # Create new user and register
+        new_user = User(username, email, password, role, balance)
+        new_user.register()
+        messagebox.showinfo("Success", "Registration successful! Please log in.")
+        self.customer()
 
     def proses_login_customer(self):
         email = self.entry_email.get()
