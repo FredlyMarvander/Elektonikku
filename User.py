@@ -9,6 +9,8 @@ class User:
         self.balance = balance
 
     def register(self):
+        
+
         query = """
         INSERT INTO Users (username, email, password, role, balance)
         VALUES (%s, %s, %s, %s, %s)
@@ -17,5 +19,6 @@ class User:
         db_object.insert_data(query, values)
         print("User berhasil diregistrasi!")
   
+    
         
 

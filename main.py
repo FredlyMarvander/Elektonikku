@@ -114,6 +114,7 @@ class MainApp:
         self.customer()
 
     def home_screen_admin(self):
+        self.clear_window()
         ttk.Label(self.root, text="Admin Dashboard", font=("Helvetica", 16)).pack(pady=20)
         self.btn_logout = ttk.Button(self.root, text="Logout", command=self.logout)
         self.btn_logout.pack(pady=20)
@@ -121,6 +122,40 @@ class MainApp:
         self.btn_view_products.pack(pady=10)
         self.btn_view_customers = ttk.Button(self.root, text="View Customers", command=self.view_customers)
         self.btn_view_customers.pack(pady=10)
+        self.btn_add_admin = ttk.Button(self.root, text="Add Admin", command=self.add_admin)
+        self.btn_add_admin.pack(pady=10)
+
+    def add_admin(self):
+        self.clear_window()
+        ttk.Label(self.root, text="Add New Admin", font=("Helvetica", 16)).pack(pady=20)
+        ttk.Label(self.root, text="Username", font=("Helvetica", 14)).pack(pady=10)
+        self.entry_username = ttk.Entry(self.root)
+        self.entry_username.pack()
+        ttk.Label(self.root, text="Email", font=("Helvetica", 14)).pack(pady=10)
+        self.entry_email = ttk.Entry(self.root)
+        self.entry_email.pack()
+        ttk.Label(self.root, text="Password", font=("Helvetica", 14)).pack(pady=10)
+        self.entry_password = ttk.Entry(self.root, show="*")
+        self.entry_password.pack()
+        self.btn_add_admin = ttk.Button(self.root, text="Add Admin", command=self.proses_add_admin)
+        self.btn_add_admin.pack(pady=20)
+
+    def proses_add_admin(self):
+        username = self.entry_username.get()
+        email = self.entry_email.get()
+        password = self.entry_password.get()
+        role = "admin"
+        balance = 0
+
+        existed_email = user_services.getUserByEmail(email)
+        if existed_email:
+            messagebox.showerror("Error", "Email already exists!")
+            return
+
+        new_admin = User(username, email, password, role, balance)
+        new_admin.register()
+        messagebox.showinfo("Success", "New admin added successfully!")
+        self.home_screen_admin()
 
     def view_customers(self):
         self.clear_window()
@@ -172,7 +207,7 @@ class MainApp:
         top_frame = ttk.Frame(self.root)
         top_frame.pack(fill=X, padx=20)
 
-        self.table = ttk.Treeview(self.root, columns=("id", "Name", "Description", "Price", "Stock"), show="tree headings", style="Custom.Treeview",     yscrollcommand=scrollbar_y.set)
+        self.table = ttk.Treeview(self.root, columns=("id", "View", "Name", "Description", "Price", "Stock"), show="headings", style="Custom.Treeview",     yscrollcommand=scrollbar_y.set)
         
         # Hubungkan scrollbar ke treeview
         scrollbar_y.config(command=self.table.yview)
@@ -182,18 +217,20 @@ class MainApp:
         scrollbar_y.pack(side=RIGHT, fill=Y)
 
         self.table.heading("id", text="ID")
-        self.table.heading("#0", text="Image")
+        self.table.heading("View", text="Image")
         self.table.heading("Name", text="Product Name")
         self.table.heading("Description", text="Description")
         self.table.heading("Price", text="Price")
         self.table.heading("Stock", text="Stock")
  
         self.table.column("id", width=50, anchor="center")
-        self.table.column("#0", width=80, anchor="center")
+        self.table.column("View", width=70, anchor="center")
         self.table.column("Name", width=150, anchor="center")
         self.table.column("Description", width=300, anchor="center")
         self.table.column("Price", width=100, anchor="center")
         self.table.column("Stock", width=100, anchor="center")
+
+        self.table.bind("<ButtonRelease-1>", self.on_table_click)
 
 
         self.table.pack(fill="both", expand=True)
@@ -209,6 +246,55 @@ class MainApp:
 
 
         self.load_table_data()
+
+    def load_table_data(self):
+        self.products = product_services.fetchProductById(self.userId)
+        # self.btn_delete = ttk.Button(self.root, text="Delete Selected Product", command=lambda: self.delete_selected_product(id))
+   
+        self.image_urls = {}
+        for product in self.products:
+            
+           
+            self.table.insert("", "end",  values=(product[0], "View", product[1], product[2], product[4], product[5]))
+
+            self.image_urls[product[0]] = product[3]
+
+      
+
+    def on_table_click(self, event):
+        region = self.table.identify("region", event.x, event.y)
+
+        if region == "cell":
+            column = self.table.identify_column(event.x)
+            row_id = self.table.identify_row(event.y)
+
+            # Kolom ke-2 (View)
+            if column == "#2":
+                item = self.table.item(row_id)
+                values = item["values"]
+
+                product_id = values[0]
+                image_url = self.image_urls.get(product_id)
+
+                if image_url:
+                    self.pop_up_image(image_url)
+
+
+    def pop_up_image(self, image_url):
+        top = Toplevel(self.root)
+        top.title("Product Image")
+        top.geometry("400x400")
+
+        response = requests.get(image_url)
+        img_data = response.content
+        img = Image.open(BytesIO(img_data))
+        img = img.resize((400, 400))
+        photo = ImageTk.PhotoImage(img)
+        self.image_refs.append(photo)
+
+        label = Label(top, image=photo)
+        label.image = photo  # Simpan referensi gambar untuk mencegah garbage collection
+        label.pack()
     
     def add_product(self):
         self.clear_window()
@@ -242,46 +328,10 @@ class MainApp:
 
         self.view_products()
        
-    def load_table_data(self):
-       
-        self.products = product_services.fetchProductById(self.userId)
-        # self.btn_delete = ttk.Button(self.root, text="Delete Selected Product", command=lambda: self.delete_selected_product(id))
-      
-        i = 1
-        self.image_urls = {}
-        for product in self.products:
-           
-            self.table.insert("", "end", values=(product[0], product[1], product[2], product[4], product[5]))
-
-            self.image_urls[product[0]] = product[3]
-
-            threading.Thread(
-            target=self.load_image_async,
-            args=(product[0], product[3])
-            ).start()
-
-            i += 1
+   
 
 
-    def load_image_async(self, item_id, image_url):
-        try:
-            response = requests.get(image_url, timeout=4)
-            image = Image.open(BytesIO(response.content))
-            image = image.resize((80, 80))
-            photo = ImageTk.PhotoImage(image)
-
-            self.image_refs.append(photo)
-
-            def update_image():
-                # ✅ CEK dulu apakah item masih ada
-                if item_id in self.table.get_children():
-                    self.table.item(item_id, image=photo)
-
-            # Update UI dengan aman
-            self.root.after(0, update_image)
-
-        except Exception as e:
-            print("Gagal load gambar:", e)
+   
 
     def get_selected_product(self):
         selected_item = self.table.selection()
@@ -290,14 +340,12 @@ class MainApp:
             return None
        
         product_values = self.table.item(selected_item)["values"]
-       
-       
-        
-        
 
         image = self.image_urls[product_values[0]]
         
         return product_values, image
+    
+
     
     def delete_selected_product(self):
         product_values, image = self.get_selected_product()
