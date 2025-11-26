@@ -8,18 +8,20 @@ from Product import Product
 from PIL import Image, ImageTk
 import requests
 from io import BytesIO
-import threading
+import TKinterModernThemes as TKMT
 
 
-
-class MainApp:
+class MainApp(TKMT.ThemedTKinterFrame):
     def __init__(self, root):
-
+        super().__init__("Elektronikku", theme="azure", mode="light")
         self.root = root
         self.root.title("Elektronikku")
         self.root.state("zoomed")
 
         # self.root.geometry("800x600")
+        self.home_screen()
+
+    def home_screen(self):
         ttk.Label(self.root, text="Welcome to Elektronikku", font=("Helvetica", 16)).pack(pady=20)
         self.buttonAdmin = ttk.Button(self.root, text="Admin", command=self.admin)
         self.buttonAdmin.pack()
@@ -74,16 +76,16 @@ class MainApp:
         username = self.entry_username.get()
         email = self.entry_email.get()
         password = self.entry_password.get()
-        role = "customer"  # Default role for regular users
-        balance = self.entry_balance.get()    # Default balance for new users
+        role = "customer"  
+        balance = self.entry_balance.get()    
 
-        # Check if email already exists
+       
         existed_email = user_services.getUserByEmail(email)
         if existed_email:
             messagebox.showerror("Error", "Email already exists!")
             return
 
-        # Create new user and register
+       
         new_user = User(username, email, password, role, balance)
         new_user.register()
         messagebox.showinfo("Success", "Registration successful! Please log in.")
@@ -405,13 +407,151 @@ class MainApp:
     
 
     def home_screen_customer(self):
-        ttk.Label(self.root, text="Customer Dashboard", font=("Helvetica", 16)).pack(pady=20)
-        self.btn_logout = ttk.Button(self.root, text="Logout", command=self.logout)
-        self.btn_logout.pack(pady=20)
+        header = Frame(self.root, bg="#4A70A9", height=60)
+        header.pack(fill=X)
+
+        # ===== Frame Header =====
+        header_left = Frame(header, bg="#4A70A9")
+        header_left.pack(side=LEFT, fill=Y)
+
+        header_center = Frame(header, bg="#4A70A9")
+        header_center.pack(side=LEFT, expand=True)
+
+        header_right = Frame(header, bg="#4A70A9")
+        header_right.pack(side=RIGHT, fill=Y)
+
+        # ===== ISI KIRI =====
+        Label(
+            header_left,
+            text="Elektronikku",
+            font=("Arial", 22, "bold"),
+            bg="#4A70A9",
+            fg="white"
+        ).pack(padx=10, pady=10)
+
+        # ===== ISI TENGAH =====
+        Label(
+            header_center,
+            text="Smart Choice for Smart Life",
+            font=("Arial", 16, "italic"),
+            bg="#4A70A9",
+            fg="white"
+        ).pack(expand=True)
+
+        # ===== ISI KANAN =====
+        ttk.Button(
+            header_right,
+            text="Cart",
+            
+        ).pack(side=RIGHT, padx=10, pady=10)
+
+        
+        body = Frame(root)
+        body.pack(fill="both", expand=True)
+
+        sidebar = Frame(body, width=250, bg="#d4eded")
+        sidebar.pack(side="left", fill="y")
+
+        product_area = Frame(body, bg="white")
+        product_area.pack(side="right", fill="both", expand=True)
+
+        Button(sidebar,
+           text="Profile",
+           font=("Arial", 14, "bold"),
+           bg="#69a7a7",
+           fg="black",
+           height=2).pack(fill="x", padx=10, pady=20)
+        
+        Button(sidebar,
+           text="Add Balance",
+           font=("Arial", 14, "bold"),
+           bg="#69a7a7",
+           fg="black",
+           height=2).pack(fill="x", padx=10, pady=20)
+        
+        Button(sidebar,
+           text="History",
+           font=("Arial", 14, "bold"),
+           bg="#69a7a7",
+           fg="black",
+           height=2).pack(fill="x", padx=10, pady=20)
+        
+        Button(
+            sidebar,
+            text="Logout",
+            font=("Arial", 14, "bold"),
+            bg="#69a7a7",
+            fg="black",
+            command=self.logout
+        ).pack(side=BOTTOM, fill="x", padx=10, pady=20)
+
+        canvas = Canvas(product_area)
+        scrollbar = Scrollbar(product_area, orient="vertical", command=canvas.yview)
+
+        scrollable_frame = Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        self.products = product_services.fetchProducts()
+
+        row, col = 0, 0
+        for product in self.products:
+            print(product)
+            card = self.create_product_card(scrollable_frame,
+                                    product[3],
+                                    product[1],
+                                    product[4])
+            card.grid(row=row, column=col, padx=20, pady=20)
+
+
+            col += 1
+            if col == 7:
+                col = 0
+                row += 1
+
+    def create_product_card(self, parent, image_url, name, price):
+        card = Frame(parent, bg="white", bd=1, relief=SOLID)
+
+        # LOAD IMAGE DARI URL
+        try:
+            response = requests.get(image_url)
+            img_data = response.content
+
+            img = Image.open(BytesIO(img_data))
+            img = img.resize((150, 150))  # ukuran kartu
+
+            photo = ImageTk.PhotoImage(img)
+
+            if not hasattr(self, "image_refs"):
+                self.image_refs = []
+            self.image_refs.append(photo)
+
+            img_label = Label(card, image=photo)
+            img_label.image = photo
+            img_label.pack(pady=5)
+
+        except Exception as e:
+            Label(card, text="Image not available").pack()
+
+        Label(card, text=name, font=("Arial", 12, "bold"), bg="white").pack()
+        Label(card, text=f"Rp {price:,}", fg="black", bg="white").pack()
+
+        return card
+
+
 
     def logout(self):
         self.clear_window()
-        self.__init__(self.root)
+        self.home_screen()
 
     def clear_window(self):
         for widget in self.root.winfo_children():
