@@ -1584,7 +1584,7 @@ class MainApp():
            font=("Arial", 14, "bold"),
            bg="#69a7a7",
            fg="black",
-           height=2).pack(fill="x", padx=10, pady=20)
+           height=2, command=self.show_profile).pack(fill="x", padx=10, pady=20)
         
         Button(sidebar,
            text="Add Balance",
@@ -2349,6 +2349,35 @@ class MainApp():
     def clear_window(self):
         for widget in self.root.winfo_children():
             widget.destroy()
+
+
+
+    #profil customer
+    def show_profile(self):
+        self.clear_window()  
+        fetchUserData  = user_services.getUserById(self.current_customer_id)
+        print(fetchUserData)
+        
+        frame = Frame(self.root)
+        frame.pack(pady=30)
+
+        Label(frame, text="User Profile", font=("Helvetica", 20, "bold")).grid(row=0, column=0, columnspan=2, pady=20)
+
+        Label(frame, text="Username:", font=("Helvetica", 14)).grid(row=1, column=0, sticky="w", padx=10, pady=5)
+        Label(frame, text=fetchUserData[1], font=("Helvetica", 14)).grid(row=1, column=1, sticky="w", padx=10, pady=5)
+
+        Label(frame, text="Email:", font=("Helvetica", 14)).grid(row=2, column=0, sticky="w", padx=10, pady=5)
+        Label(frame, text=fetchUserData[2], font=("Helvetica", 14)).grid(row=2, column=1, sticky="w", padx=10, pady=5)
+
+        Label(frame, text="Role:", font=("Helvetica", 14)).grid(row=3, column=0, sticky="w", padx=10, pady=5)
+        Label(frame, text=fetchUserData[4], font=("Helvetica", 14)).grid(row=3, column=1, sticky="w", padx=10, pady=5)
+
+        Label(frame, text="Balance:", font=("Helvetica", 14)).grid(row=4, column=0, sticky="w", padx=10, pady=5)
+        Label(frame, text=f"Rp {fetchUserData[5]:,}", font=("Helvetica", 14)).grid(row=4, column=1, sticky="w", padx=10, pady=5)
+
+        Button(self.root, text="Back", font=("Helvetica", 12), command=self.main_menu).pack(pady=20)
+
+
 
 
 root = Tk()
