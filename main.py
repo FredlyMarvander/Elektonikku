@@ -5,15 +5,23 @@ from user_service import user_services
 from tkinter import messagebox
 from product_service import product_services
 from Product import Product
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageOps
 import requests
 from io import BytesIO
+import threading
 import TKinterModernThemes as TKMT
+from cart_service import cart_services 
+from CartDetail import CartDetail
+from cart_detail_service import cart_detail_service
+
+# from ttkbootstrap import Style
 
 
 class MainApp(TKMT.ThemedTKinterFrame):
     def __init__(self, root):
-        super().__init__("Elektronikku", theme="azure", mode="light")
+        # self.style = Style(theme="cosmo")
+
+        # super().__init__("Elektronikku", theme="azure", mode="light")
         self.root = root
         self.root.title("Elektronikku")
         self.root.state("zoomed")
@@ -97,6 +105,7 @@ class MainApp(TKMT.ThemedTKinterFrame):
        
         if (user_services.login_customer(email, password)):
             messagebox.showinfo("Info", "Login Successfully!")
+            self.current_customer_id = user_services.getUserByEmail(email)[0]
             self.clear_window()
             self.home_screen_customer()
         else:
@@ -407,6 +416,7 @@ class MainApp(TKMT.ThemedTKinterFrame):
     
 
     def home_screen_customer(self):
+        self.clear_window()
         header = Frame(self.root, bg="#4A70A9", height=60)
         header.pack(fill=X)
 
@@ -439,14 +449,23 @@ class MainApp(TKMT.ThemedTKinterFrame):
         ).pack(expand=True)
 
         # ===== ISI KANAN =====
+
+        self.balance = user_services.getUserById(self.current_customer_id)[5]
+
+        Label(
+            header_right,
+            text=f"Balance: Rp{self.balance:,}",
+            font=("Arial", 14, "bold"),
+            bg="#4A70A9",
+            fg="white"
+        ).pack(side=LEFT, padx=10, pady=10)
+
         ttk.Button(
             header_right,
             text="Cart",
             command=self.view_cart
-            
         ).pack(side=RIGHT, padx=10, pady=10)
 
-        
         body = Frame(root)
         body.pack(fill="both", expand=True)
 
@@ -506,11 +525,16 @@ class MainApp(TKMT.ThemedTKinterFrame):
 
         row, col = 0, 0
         for product in self.products:
-            print(product)
+            
+            
+            seller = user_services.getUserById(product[6])
+
             card = self.create_product_card(scrollable_frame,
-                                    product[3],
-                                    product[1],
-                                    product[4])
+                                        product[3],
+                                        product[1],
+                                        product[4],
+                                        seller
+                                        )
             card.grid(row=row, column=col, padx=20, pady=20)
 
 
@@ -519,47 +543,527 @@ class MainApp(TKMT.ThemedTKinterFrame):
                 col = 0
                 row += 1
 
-    def view_cart(self):
-        self.clear_window()
-        self.btn_back = ttk.Button(self.root, text="Back to Home", command=self.home_screen_customer)
-        self.btn_back.pack(pady=10)
-        self.fetch_cart = product_services.fetchCart(self.userId)
+    def add_to_cart_process(self, sellerId, name, price, image_url):
+        checkCart = cart_services.checkCartActive(self.current_customer_id, sellerId)
+
+        if not checkCart:
+            cart_services.createCart(self.current_customer_id, sellerId)
+            
+
+        self.cartId = cart_services.getCartByUserAndSeller(self.current_customer_id, sellerId)
+        print(self.cartId)
+
+       
+        product_in_cart = cart_detail_service.checkProductInCart(self.cartId[0], name)
         
 
-    def create_product_card(self, parent, image_url, name, price):
+        if product_in_cart:
+            cart_detail_service.increaseQuantity(self.cartId[0], name)
+        else:
+            
+            cartDetail = CartDetail(
+                quantity=1,
+                name=name,
+                price=price,
+                cartId=self.cartId[0],
+                image_url=image_url
+            )
+            cartDetail.insertCartDetail()
+        
+        
+        messagebox.showinfo("Success", "Successfully Add to Cart!")
+
+             
+
+    def view_cart(self):
+        self.clear_window()
+        
+        # Header Cart dengan styling menarik
+        header_cart = Frame(self.root, bg="#4A70A9", height=80)
+        header_cart.pack(fill=X)
+        header_cart.pack_propagate(False)
+
+        
+        Label(
+            header_cart,
+            text="🛒 My Shopping Cart",
+            font=("Arial", 24, "bold"),
+            bg="#4A70A9",
+            fg="white"
+        ).pack(pady=20)
+
+       
+        
+        # Button Back dengan styling
+        btn_back_frame = Frame(self.root, bg="#f5f5f5")
+        btn_back_frame.pack(fill=X, pady=10)
+        
+        self.btn_back = ttk.Button(
+            btn_back_frame, 
+            text="← Back to Home", 
+            command=self.home_screen_customer
+        )
+        self.btn_back.pack(pady=5)
+        
+        self.fetch_cart_id = cart_services.getCartByUserId(self.current_customer_id)
+        print(self.fetch_cart_id)
+        
+        self.fetch_cart = cart_detail_service.fetchCartDetailsByCartId(self.fetch_cart_id[0]) if self.fetch_cart_id[0] else None
+        
+        if not self.fetch_cart:
+            # Empty cart design yang menarik
+            empty_frame = Frame(self.root, bg="white")
+            empty_frame.pack(fill="both", expand=True)
+            
+            Label(
+                empty_frame,
+                text="🛒",
+                font=("Arial", 100),
+                bg="white"
+            ).pack(pady=50)
+            
+            Label(
+                empty_frame,
+                text="Your cart is empty",
+                font=("Arial", 20, "bold"),
+                bg="white",
+                fg="#666"
+            ).pack()
+            
+            Label(
+                empty_frame,
+                text="Add some products to get started!",
+                font=("Arial", 14),
+                bg="white",
+                fg="#999"
+            ).pack(pady=10)
+        
+        else:
+         
+            self.cart_detail_info = cart_detail_service.fetchCartDetailsByCartId(self.fetch_cart_id[0])
+            
+            # Main container dengan background
+            main_container = Frame(self.root, bg="#f5f5f5")
+            main_container.pack(fill="both", expand=True)
+            
+            # Cart content frame dengan padding untuk centering
+            content_frame = Frame(main_container, bg="#f5f5f5")
+            content_frame.pack(fill="both", expand=True, padx=50, pady=20)
+            
+            # Canvas dan Scrollbar dengan center alignment
+            self.canvas_cart = Canvas(content_frame, bg="#f5f5f5", highlightthickness=0)
+            self.scrollbar_cart = Scrollbar(content_frame, orient="vertical", command=self.canvas_cart.yview)
+            self.scrollable_cart_frame = Frame(self.canvas_cart, bg="#f5f5f5")
+
+            def center_window(event):
+                self.canvas_cart.configure(scrollregion=self.canvas_cart.bbox("all"))
+                # Center horizontally
+                canvas_width = self.canvas_cart.winfo_width()
+                if canvas_width > 1:
+                    self.canvas_cart.coords(self.cart_window_id, canvas_width // 2, 0)
+
+            self.scrollable_cart_frame.bind("<Configure>", center_window)
+
+            self.cart_window_id = self.canvas_cart.create_window((0, 0), window=self.scrollable_cart_frame, anchor="n")
+            self.canvas_cart.configure(yscrollcommand=self.scrollbar_cart.set)
+
+            self.canvas_cart.pack(side="left", fill="both", expand=True)
+            self.scrollbar_cart.pack(side="right", fill="y")
+            
+            # Bind canvas resize untuk re-center
+            self.canvas_cart.bind("<Configure>", lambda e: center_window(e) if self.canvas_cart.winfo_width() > 1 else None)
+
+            self.total = self.render_cart()
+
+            # Footer dengan total dan checkout yang menarik
+            footer_frame = Frame(self.root, bg="white", bd=1, relief="solid")
+            footer_frame.pack(fill=X, pady=10, padx=50)
+            
+            # Total price container
+            total_container = Frame(footer_frame, bg="white")
+            total_container.pack(pady=15)
+            
+            Label(
+                total_container,
+                text=f"Balance: Rp{self.balance:,}",
+                font=("Arial", 22, "bold"),
+                bg="white",
+                fg="black",
+            ).pack(pady=20)
+            
+            Label(
+                total_container,
+                text="Total Amount:",
+                font=("Arial", 16),
+                bg="white",
+                fg="#666"
+            ).pack(side=LEFT, padx=10)
+            
+            self.total_label = Label(
+                total_container,
+                text=f"Rp {self.total:,}",
+                font=("Arial", 22, "bold"),
+                bg="white",
+                fg="#1976d2"
+            )
+            self.total_label.pack(side=LEFT)
+            
+            # Checkout button dengan styling modern
+            checkout_btn = Button(
+                footer_frame,
+                text="Proceed to Checkout",
+                font=("Arial", 14, "bold"),
+                bg="#4CAF50",
+                fg="white",
+                relief="flat",
+                padx=30,
+                pady=12,
+                cursor="hand2",
+                command=lambda: self.checkout(self.current_customer_id)
+            )
+            checkout_btn.pack(pady=10)
+
+
+
+    def render_cart(self):
+        for widget in self.scrollable_cart_frame.winfo_children():
+            widget.destroy()
+
+
+        total_all = 0
+      
+        for item in self.fetch_cart:
+            print(item)
+            cartId = item[4]
+            transactionDate = cart_services.getCartById(cartId)
+  
+            if transactionDate[0][0] == None:
+                name = item[1]
+                price = item[2]
+                quantity = item[3]
+                image_url = item[5]
+
+                subtotal = price * quantity
+                total_all += subtotal
+
+                # Card wrapper untuk centering
+                card_wrapper = Frame(self.scrollable_cart_frame, bg="#f5f5f5")
+                card_wrapper.pack(pady=8, fill=X)
+                
+                # Card dengan styling menarik dan center
+                card = Frame(card_wrapper, bd=2, relief="solid", bg="white", height=120, width=800)
+                card.pack(anchor="center")
+                card.pack_propagate(False)
+                
+                # Grid configuration untuk layout yang rapi
+                card.grid_columnconfigure(1, weight=1)
+
+                # Image frame dengan ukuran tetap
+                img_frame = Frame(card, bg="white", width=100, height=100)
+                img_frame.grid(row=0, column=0, rowspan=3, padx=15, pady=10, sticky="w")
+                img_frame.pack_propagate(False)
+                
+                try:
+                    response = requests.get(image_url)
+                    img = Image.open(BytesIO(response.content))
+                    # Gunakan ImageOps.fit untuk crop yang tepat
+                    img = ImageOps.fit(img, (90, 90), Image.LANCZOS)
+                    photo = ImageTk.PhotoImage(img)
+
+                    if not hasattr(self, "image_refs"):
+                        self.image_refs = []
+                    self.image_refs.append(photo)
+
+                    img_label = Label(img_frame, image=photo, bg="white", bd=1, relief="solid")
+                    img_label.pack(expand=True)
+                except:
+                    placeholder = Label(
+                        img_frame, 
+                        text="📷\nNo Image", 
+                        bg="#f0f0f0", 
+                        font=("Arial", 10),
+                        justify="center",
+                        bd=1,
+                        relief="solid"
+                    )
+                    placeholder.pack(expand=True)
+
+                # Product info frame dengan styling yang lebih baik
+                info_frame = Frame(card, bg="white")
+                info_frame.grid(row=0, column=1, rowspan=3, sticky="ew", padx=15)
+                
+                Label(
+                    info_frame, 
+                    text=name, 
+                    font=("Arial", 14, "bold"), 
+                    bg="white", 
+                    fg="#333",
+                    anchor="w"
+                ).pack(anchor="w", pady=(5, 2))
+                
+                Label(
+                    info_frame, 
+                    text=f"Unit Price: Rp {price:,}", 
+                    font=("Arial", 11), 
+                    bg="white", 
+                    fg="#666",
+                    anchor="w"
+                ).pack(anchor="w")
+                
+                Label(
+                    info_frame, 
+                    text=f"Subtotal: Rp {subtotal:,}", 
+                    font=("Arial", 12, "bold"), 
+                    bg="white", 
+                    fg="#2e7d32",
+                    anchor="w"
+                ).pack(anchor="w", pady=(2, 5))
+
+                # Quantity controls dengan styling modern
+                qty_frame = Frame(card, bg="white")
+                qty_frame.grid(row=0, column=2, rowspan=3, padx=15)
+                
+                Label(qty_frame, text="Quantity", font=("Arial", 9), bg="white", fg="#666").pack()
+                
+                qty_control = Frame(qty_frame, bg="white")
+                qty_control.pack(pady=5)
+                
+                btn_decrease = Button(
+                    qty_control, 
+                    text="−", 
+                    font=("Arial", 12, "bold"), 
+                    width=2,
+                    bg="#f0f0f0",
+                    fg="#333",
+                    relief="flat",
+                    cursor="hand2",
+                    command=lambda n=name: self.decrease_qty(n)
+                )
+                btn_decrease.pack(side="left", padx=2)
+                
+                qty_display = Label(
+                    qty_control, 
+                    text=str(quantity), 
+                    width=3, 
+                    font=("Arial", 12, "bold"), 
+                    bg="white", 
+                    bd=1, 
+                    relief="solid"
+                )
+                qty_display.pack(side="left", padx=2)
+                
+                btn_increase = Button(
+                    qty_control, 
+                    text="+", 
+                    font=("Arial", 12, "bold"), 
+                    width=2,
+                    bg="#4A70A9",
+                    fg="white",
+                    relief="flat",
+                    cursor="hand2",
+                    command=lambda n=name: self.increase_qty(n)
+                )
+                btn_increase.pack(side="left", padx=2)
+
+                # Remove button dengan styling modern
+                remove_btn = Button(
+                    card, 
+                    text="🗑️ Remove", 
+                    font=("Arial", 10, "bold"), 
+                    fg="white", 
+                    bg="#e53935", 
+                    relief="flat",
+                    cursor="hand2",
+                    command=lambda n=name: self.remove_item(n)
+                )
+                remove_btn.grid(row=0, column=3, rowspan=3, padx=15, pady=10, sticky="e")
+            
+        return total_all
+            
+    def increase_qty(self, name):
+        cart_detail_service.increaseQuantity(self.fetch_cart_id[0], name)
+        self.fetch_cart = cart_detail_service.fetchCartDetailsByCartId(self.fetch_cart_id[0])
+        
+        # Clear old widgets
+        for widget in self.scrollable_cart_frame.winfo_children():
+            widget.destroy()
+        
+        # Re-render and get new total
+        self.total = self.render_cart()
+        
+        # Update total label
+        self.total_label.config(text=f"Rp {self.total:,}")
+        
+    def decrease_qty(self, name):
+        cart_detail_service.decreaseQuantity(self.fetch_cart_id[0], name)
+        self.fetch_cart = cart_detail_service.fetchCartDetailsByCartId(self.fetch_cart_id[0])
+        
+        # Clear old widgets
+        for widget in self.scrollable_cart_frame.winfo_children():
+            widget.destroy()
+        
+        # Re-render and get new total
+        self.total = self.render_cart()
+        
+        # Update total label
+        self.total_label.config(text=f"Rp {self.total:,}")
+
+    def remove_item(self, name):
+        cart_detail_service.removeItemFromCart(self.fetch_cart_id[0], name)
+        self.fetch_cart = cart_detail_service.fetchCartDetailsByCartId(self.fetch_cart_id[0])
+        
+        # Check if cart is now empty
+        if not self.fetch_cart or len(self.fetch_cart) == 0:
+            self.view_cart()
+            return
+        
+        # Clear old widgets
+        for widget in self.scrollable_cart_frame.winfo_children():
+            widget.destroy()
+        
+        # Re-render and get new total
+        self.total = self.render_cart()
+        
+        # Update total label
+        self.total_label.config(text=f"Rp {self.total:,}")
+
+    def checkout(self, current_user_id):
+        if not self.fetch_cart or len(self.fetch_cart) == 0:
+            messagebox.showinfo("Info", "Your cart is empty!")
+            return
+        
+        if self.balance < self.total:
+            messagebox.showinfo("Info", "Your balance is insufficient!")
+            return
+        
+        for item in self.fetch_cart:
+            print(item, "item")
+            name = item[1]
+            quantity = item[3]
+
+            
+            product = product_services.getProductByName(name)
+
+            print(product, "product")
+
+            current_stock = product[5]
+
+            if quantity > current_stock:
+                messagebox.showinfo("Info", f"Insufficient stock for {name}!")
+                return
+
+            # Update stock produk
+            new_stock = current_stock - quantity
+            product_services.updateStock(product[0], new_stock)
+
+        user_services.updateBalance(current_user_id, self.balance - self.total)
+
+        cart_services.checkoutCart(current_user_id, self.fetch_cart_id[0], self.total)
+
+        messagebox.showinfo("Success", "Checkout successful!")
+        self.home_screen_customer()
+
+        
+
+        
+    
+    def create_product_card(self, parent, image_url, name, price, seller):
         card = Frame(parent, bg="white", bd=1, relief=SOLID)
 
-        # LOAD IMAGE DARI URL
-        try:
-            response = requests.get(image_url)
-            img_data = response.content
+        # Biar card tidak mengecil
+        card.config(width=230, height=350)
+        card.pack_propagate(False)
 
-            img = Image.open(BytesIO(img_data))
-            img = img.resize((220, 200))  # ukuran kartu
+        # Gunakan Canvas untuk image
+        img_canvas = Canvas(card, width=220, height=200, bg="white", highlightthickness=0)
+        img_canvas.pack(pady=5)
 
-            photo = ImageTk.PhotoImage(img)
+        if not hasattr(self, "image_cache"):
+            self.image_cache = {}
 
-            if not hasattr(self, "image_refs"):
-                self.image_refs = []
-            self.image_refs.append(photo)
+        if not hasattr(self, "image_refs"):
+            self.image_refs = []
 
-            img_label = Label(card, image=photo)
-            img_label.image = photo
-            img_label.pack(pady=5)
+        # Function untuk load image di background
+        def load_image_async():
+            try:
+                # Kalau sudah ada di cache
+                if image_url in self.image_cache:
+                    photo = self.image_cache[image_url]
 
-        except Exception as e:
-            Label(card, text="Image not available").pack()
+                    def show_cached():
+                        try:
+                            if img_canvas.winfo_exists():
+                                img_canvas.delete("all")
+                                img_canvas.create_image(110, 100, image=photo)
+                        except:
+                            pass
 
+                    try:
+                        img_canvas.after(0, show_cached)
+                    except:
+                        pass
+                    return
+
+                # Download gambar
+                response = requests.get(image_url, timeout=10)
+                img_data = response.content
+
+                img = Image.open(BytesIO(img_data))
+                img = img.convert("RGB")
+
+                # Paksa ukuran pas, tidak kecil, tidak gepeng
+                img = ImageOps.fit(img, (220, 200), Image.LANCZOS)
+
+                photo = ImageTk.PhotoImage(img)
+
+                # Simpan di cache
+                self.image_cache[image_url] = photo
+                self.image_refs.append(photo)
+
+                # Tampilkan di canvas
+                def show_image():
+                    try:
+                        if img_canvas.winfo_exists():
+                            img_canvas.delete("all")
+                            img_canvas.create_image(110, 100, image=photo)
+                    except:
+                        pass
+
+                try:
+                    img_canvas.after(0, show_image)
+                except:
+                    pass
+
+            except Exception as e:
+         
+                try:
+                    img_canvas.after(0, lambda: img_canvas.create_text(
+                        110, 100, text="Image not available"
+                    ) if img_canvas.winfo_exists() else None)
+                except:
+                    pass
+
+        # Jalankan thread
+        threading.Thread(target=load_image_async, daemon=True).start()
+
+        # Info produk
         Label(card, text=name, font=("Arial", 12, "bold"), bg="white").pack()
         Label(card, text=f"Rp {price:,}", fg="black", bg="white").pack()
-        self.btn_add_to_cart = ttk.Button(card, text="Add to Cart")
+        Label(card, text=f"🏪 {seller[1]}", fg="black", bg="white").pack()
+
+        self.btn_add_to_cart = ttk.Button(
+            card,
+            text="Add to Cart",
+            command=lambda: self.add_to_cart_process(
+                seller[0], name, price, image_url
+            )
+        )
         self.btn_add_to_cart.pack(pady=10)
 
         return card
 
-
     
-
     def logout(self):
         self.clear_window()
         self.home_screen()
@@ -567,6 +1071,7 @@ class MainApp(TKMT.ThemedTKinterFrame):
     def clear_window(self):
         for widget in self.root.winfo_children():
             widget.destroy()
+
 
 root = Tk()
 app = MainApp(root)

@@ -63,5 +63,26 @@ class UserService:
         result = db_object.fetch_data(query)
         return result
     
+    def getUserById(self, id):
+        query = "SELECT * FROM Users WHERE id = %s"
+        values = [id]
+        result = db_object.fetch_data(query, values)
+
+        if len(result) > 0:
+            row = result[0]
+            return row
+        
+        else:
+            return None
+
+    def updateBalance(self, user_id, new_balance):
+        query = """
+            UPDATE Users
+            SET balance = %s
+            WHERE id = %s
+        """
+        values = (new_balance, user_id)
+        result = db_object.update_data(query, values)
+        return result    
         
 user_services = UserService()
