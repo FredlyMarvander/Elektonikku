@@ -9,7 +9,6 @@ from PIL import Image, ImageTk, ImageOps
 import requests
 from io import BytesIO
 import threading
-import TKinterModernThemes as TKMT
 from cart_service import cart_services 
 from CartDetail import CartDetail
 from cart_detail_service import cart_detail_service
@@ -17,7 +16,7 @@ from cart_detail_service import cart_detail_service
 # from ttkbootstrap import Style
 
 
-class MainApp(TKMT.ThemedTKinterFrame):
+class MainApp():
     def __init__(self, root):
         # self.style = Style(theme="cosmo")
 
@@ -487,7 +486,8 @@ class MainApp(TKMT.ThemedTKinterFrame):
            font=("Arial", 14, "bold"),
            bg="#69a7a7",
            fg="black",
-           height=2).pack(fill="x", padx=10, pady=20)
+           height=2,
+           command=self.add_balance).pack(fill="x", padx=10, pady=20)
         
         Button(sidebar,
            text="History",
@@ -593,7 +593,7 @@ class MainApp(TKMT.ThemedTKinterFrame):
         ).pack(pady=20)
 
        
-        
+       
         # Button Back dengan styling
         btn_back_frame = Frame(self.root, bg="#f5f5f5")
         btn_back_frame.pack(fill=X, pady=10)
@@ -1063,7 +1063,58 @@ class MainApp(TKMT.ThemedTKinterFrame):
 
         return card
 
-    
+    # ----------------------------
+    # Tambahan: fungsi Add Balance
+    # ----------------------------
+    def add_balance(self):
+        top = Toplevel(self.root)
+        top.title("Add Balance")
+        top.geometry("320x180")
+        top.resizable(False, False)
+
+        Label(top, text="Masukkan jumlah top up:", font=("Arial", 12)).pack(pady=10)
+
+        entry_amount = Entry(top, font=("Arial", 12))
+        entry_amount.pack(pady=5)
+
+        def process_add():
+            # Validasi input
+            try:
+                amount = int(entry_amount.get())
+                if amount <= 0:
+                    messagebox.showerror("Error", "Jumlah harus lebih dari 0!")
+                    return
+            except ValueError:
+                messagebox.showerror("Error", "Input harus angka!")
+                return
+
+            # Ambil balance dari DB
+            user = user_services.getUserById(self.current_customer_id)
+            if not user:
+                messagebox.showerror("Error", "User tidak ditemukan!")
+                return
+            current_balance = user[5] if user[5] is not None else 0
+
+            # Maksimal saldo 1.000.000
+            if current_balance + amount > 1_000_000_000:
+                messagebox.showwarning("Error", "Balance tidak boleh melebihi 1.000.000_000!")
+                return
+
+            # Update saldo di DB
+            user_services.updateBalance(self.current_customer_id, current_balance + amount)
+
+            messagebox.showinfo("Success", "Balance berhasil ditambahkan!")
+            top.destroy()
+
+            # Refresh tampilan home & saldo
+            self.home_screen_customer()
+
+        Button(top, text="Tambah", command=process_add, width=12).pack(pady=12)
+
+    # ----------------------------
+    # End Add Balance
+    # ----------------------------
+
     def logout(self):
         self.clear_window()
         self.home_screen()
