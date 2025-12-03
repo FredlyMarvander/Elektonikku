@@ -121,16 +121,33 @@ class CartService:
 
     def getCartAndCartDetails(self, admin_id):
         query = """
-        SELECT DATE(Carts.transactionDate) AS transactionDate, SUM(CartDetails.price) AS totalPrice, COUNT(CartDetails.id) AS itemCount
+        SELECT DATE(Carts.transactionDate) AS transactionDate, SUM(CartDetails.price) AS totalPrice
         FROM Carts
         JOIN CartDetails ON Carts.id = CartDetails.cartId
         WHERE Carts.transactionDate IS NOT NULL AND sellerId = %s
         GROUP BY Carts.transactionDate
 
-        ORDER BY Carts.transactionDate DESC
+        ORDER BY transactionDate DESC
         """
 
         val = (admin_id,)
+
+        result = db_object.fetch_data(query, val)
+
+        return result
+
+    def getCartAndCartDetailsCustomer(self, user_id):
+        query = """
+        SELECT Carts.id, Carts.transactionDate AS transactionDate, SUM(CartDetails.price) AS totalPrice, COUNT(CartDetails.id) AS itemCount
+        FROM Carts
+        JOIN CartDetails ON Carts.id = CartDetails.cartId
+        WHERE Carts.transactionDate IS NOT NULL AND userId = %s
+        GROUP BY Carts.transactionDate
+
+        ORDER BY Carts.transactionDate DESC
+        """
+
+        val = (user_id,)
 
         result = db_object.fetch_data(query, val)
 

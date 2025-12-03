@@ -710,6 +710,7 @@ class MainApp():
         inner_frame.pack(padx=60, pady=40)
         
         cart = cart_services.getCartAndCartDetails(self.current_admin_id)
+        print(cart)
         
         dates = []
         totalPrices = []
@@ -1915,7 +1916,7 @@ class MainApp():
         # Treeview
         self.tableHistory = ttk.Treeview(
             table_container,
-            columns=("No", "TransactionDate", "Products Name", "Total Price"),
+            columns=("CartID", "Datetime", "Total Price", "View Details"),
             show="headings",
             style="History.Treeview",
             yscrollcommand=scrollbar.set
@@ -1924,35 +1925,169 @@ class MainApp():
         scrollbar.config(command=self.tableHistory.yview)
         
         # Column headings
-        self.tableHistory.heading("No", text="No")
-        self.tableHistory.heading("TransactionDate", text="Transaction Date")
-        self.tableHistory.heading("Products Name", text="Product Name")
+        self.tableHistory.heading("CartID", text="Cart ID")
+        self.tableHistory.heading("Datetime", text="Datetime")
         self.tableHistory.heading("Total Price", text="Total Price")
+        self.tableHistory.heading("View Details", text="View Details")
         
         # Column widths
-        self.tableHistory.column("No", width=80, anchor="center")
-        self.tableHistory.column("TransactionDate", width=200, anchor="center")
-        self.tableHistory.column("Products Name", width=300, anchor=W)
-        self.tableHistory.column("Total Price", width=150, anchor="center")
+        self.tableHistory.column("CartID", width=80, anchor="center")
+        self.tableHistory.column("Datetime", width=200, anchor="center")
+        self.tableHistory.column("Total Price", width=200, anchor="center")
+        self.tableHistory.column("View Details", width=150, anchor="center")
         
         # Pack table dan scrollbar
         self.tableHistory.pack(side=LEFT, fill=BOTH, expand=True)
         scrollbar.pack(side=RIGHT, fill=Y)
+        self.tableHistory.bind("<ButtonRelease-1>", self.on_table_click_history)
         
         self.load_data_history()
 
     def load_data_history(self):
-        self.dataHistory = cart_services.getAllCartsByUserId(self.current_customer_id)
-        i = 1
+        self.dataHistory = cart_services.getCartAndCartDetailsCustomer(self.current_customer_id)
+
         for history in self.dataHistory:
+            self.tableHistory.insert("", "end", values=(history[0], history[1], f"Rp{history[2]:,}", "View Details"))
+            
+    def on_table_click_history(self, event):
+        region = self.tableHistory.identify("region", event.x, event.y)
+
+        if region == "cell":
+            column = self.tableHistory.identify_column(event.x)
+            row_id = self.tableHistory.identify_row(event.y)
+
+            # Kolom ke-4 (View Details)
+            if column == "#4":
+                item = self.tableHistory.item(row_id)
+                values = item["values"]
+
+                cart_id = values[0]
+
+                self.view_history_details(cart_id)
+
+    def view_history_details(self, cart_id):
+        details = cart_detail_service.fetchCartDetailsByCartId(cart_id)
         
-            if history[1] != None:
-                data = cart_detail_service.fetchCartDetailsByCartId(history[0])
-                for item in data:
-                    total_price = item[2] * item[3]
-                    self.tableHistory.insert("", "end", values=(i, history[1], item[1], total_price))
-                    i += 1
+        detail_window = Toplevel(self.root)
+        detail_window.title(f"Cart Details - ID: {cart_id}")
+        detail_window.geometry("800x600")
+        detail_window.configure(bg=self.GRAY_BG)
+        
+        # Header frame
+        header_frame = Frame(detail_window, bg="#4A70A9", height=80)
+        header_frame.pack(fill=X)
+        header_frame.pack_propagate(False)
+        
+        Label(
+            header_frame,
+            text=f"Cart Details - ID: {cart_id}",
+            font=("Arial", 24, "bold"),
+            bg="#4A70A9",
+            fg="white"
+        ).pack(pady=25)
+        
+  
+        content_frame = Frame(detail_window, bg=self.LIGHT_BG)
+        content_frame.pack(fill=BOTH, expand=True, padx=30, pady=20)
+        
+ 
+        table_container = Frame(content_frame, bg=self.LIGHT_BG, bd=2, relief=SOLID)
+        table_container.pack(fill=BOTH, expand=True)
+        
+  
+        style = ttk.Style()
+        style.configure(
+            "Details.Treeview",
+            background="white",
+            foreground=self.TEXT_COLOR,
+            rowheight=110,
+            fieldbackground="white",
+            borderwidth=0
+        )
+        style.configure(
+            "Details.Treeview.Heading",
+            background="#4A70A9",
+            foreground="white",
+            font=("Arial", 11, "bold"),
+            borderwidth=0,
+            padding=(8, 6)
+        )
+        style.map(
+            "Details.Treeview",
+            background=[("selected", "#4A70A9")],
+            foreground=[("selected", "white")]
+        )
+        
+    
+        scrollbar = ttk.Scrollbar(table_container, orient=VERTICAL)
+        
+
+        tree = ttk.Treeview(
+            table_container,
+            columns=("Name", "Quantity", "Price"),
+            show="tree headings",
+            style="Details.Treeview",
+            yscrollcommand=scrollbar.set
+        )
+        
+        scrollbar.config(command=tree.yview)
+        
+        tree.heading("#0", text="Image")
+        
+        tree.heading("Name", text="Product Name")
+        tree.heading("Quantity", text="Quantity")
+        tree.heading("Price", text="Price")
+        
+        tree.column("#0", width=120, anchor="center")
+        
+        tree.column("Name", width=250, anchor="center")
+        tree.column("Quantity", width=120, anchor="center")
+        tree.column("Price", width=150, anchor="center")
+        
+        self.history_images = []
+       
+        for detail in details:
+            
+            img_url = detail[5]
+            response = requests.get(img_url)
+            img_data = Image.open(BytesIO(response.content))
+
+     
+            img_data = img_data.resize((100, 100))
+
+            img = ImageTk.PhotoImage(img_data)
+
+            self.history_images.append(img)
+        
+            tree.insert("", "end", image=img, values=(detail[1], detail[3], f"Rp{detail[2]:,}"))
+            
+
       
+        tree.pack(side=LEFT, fill=BOTH, expand=True)
+        scrollbar.pack(side=RIGHT, fill=Y)
+        
+
+        btn_frame = Frame(detail_window, bg=self.LIGHT_BG)
+        btn_frame.pack(fill=X, padx=30, pady=(0, 20))
+        
+        btn_close = Button(
+            btn_frame,
+            text="✕ Close",
+            font=("Arial", 12, "bold"),
+            bg=self.DANGER_COLOR,
+            fg="white",
+            activebackground="#CF1322",
+            activeforeground="white",
+            relief=FLAT,
+            bd=0,
+            padx=30,
+            pady=10,
+            cursor="hand2",
+            command=detail_window.destroy
+        )
+        btn_close.pack()
+        btn_close.bind("<Enter>", lambda e: e.widget.config(bg="#CF1322"))
+        btn_close.bind("<Leave>", lambda e: e.widget.config(bg=self.DANGER_COLOR))
         
 
     def add_to_cart_process(self, sellerId, name, price, image_url):
@@ -1998,7 +2133,7 @@ class MainApp():
         
         Label(
             header_cart,
-            text="🛒 My Shopping Cart",
+            text="My Shopping Cart",
             font=("Arial", 24, "bold"),
             bg="#4A70A9",
             fg="white"
@@ -2614,40 +2749,39 @@ class MainApp():
 
 
 
-    #profil customer
+ 
     def show_profile(self):
         self.clear_window()  
         fetchUserData  = user_services.getUserById(self.current_customer_id)
         
-        # Main frame
+
         main_frame = Frame(self.root, bg=self.GRAY_BG)
         main_frame.pack(fill=BOTH, expand=YES)
         
-        # Header dengan warna #4A70A9
+       
         header_frame = Frame(main_frame, bg="#4A70A9", height=100)
         header_frame.pack(fill=X)
         header_frame.pack_propagate(False)
         
         Label(
             header_frame,
-            text="👤 User Profile",
+            text="User Profile",
             font=("Arial", 28, "bold"),
             bg="#4A70A9",
             fg="white"
         ).pack(pady=30)
         
-        # Content frame
+  
         content_frame = Frame(main_frame, bg=self.LIGHT_BG)
         content_frame.pack(pady=60, padx=200, fill=BOTH, expand=YES)
         
         inner_frame = Frame(content_frame, bg=self.LIGHT_BG)
         inner_frame.pack(padx=60, pady=40)
         
-        # Profile card container
         profile_card = Frame(inner_frame, bg=self.LIGHT_BG)
         profile_card.pack(fill=X, pady=20)
         
-        # Username
+      
         user_frame = Frame(profile_card, bg=self.LIGHT_BG)
         user_frame.pack(fill=X, pady=15)
         
@@ -2670,7 +2804,7 @@ class MainApp():
             anchor=W
         ).pack(side=LEFT)
         
-        # Email
+
         email_frame = Frame(profile_card, bg=self.LIGHT_BG)
         email_frame.pack(fill=X, pady=15)
         
@@ -2693,7 +2827,7 @@ class MainApp():
             anchor=W
         ).pack(side=LEFT)
         
-        # Role
+    
         role_frame = Frame(profile_card, bg=self.LIGHT_BG)
         role_frame.pack(fill=X, pady=15)
         
@@ -2716,7 +2850,7 @@ class MainApp():
             anchor=W
         ).pack(side=LEFT)
         
-        # Balance
+    
         balance_frame = Frame(profile_card, bg=self.LIGHT_BG)
         balance_frame.pack(fill=X, pady=15)
         
@@ -2739,7 +2873,7 @@ class MainApp():
             anchor=W
         ).pack(side=LEFT)
         
-        # Back Button
+   
         btn_back = Button(
             inner_frame,
             text="← Back to Home",
