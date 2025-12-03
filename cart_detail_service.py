@@ -66,4 +66,7 @@ class CartDetailService:
         return result
     
     
+
+    
+    
 cart_detail_service = CartDetailService()

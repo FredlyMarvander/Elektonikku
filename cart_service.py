@@ -17,6 +17,21 @@ class CartService:
         
         return None
     
+    def getCartWithTransactionDate(self):
+        query = """
+            SELECT *
+            From Carts
+            WHERE transactionDate IS NOT NULL
+        """
+
+        result = db_object.fetch_data(query)
+
+        if result:
+            return result
+        
+        return None
+
+    
     def checkCartActive(self, userId, sellerId):
         query = """
             SELECT id FROM Carts
@@ -104,5 +119,21 @@ class CartService:
         return result
     
 
+    def getCartAndCartDetails(self, admin_id):
+        query = """
+        SELECT DATE(Carts.transactionDate) AS transactionDate, SUM(CartDetails.price) AS totalPrice, COUNT(CartDetails.id) AS itemCount
+        FROM Carts
+        JOIN CartDetails ON Carts.id = CartDetails.cartId
+        WHERE Carts.transactionDate IS NOT NULL AND sellerId = %s
+        GROUP BY Carts.transactionDate
+
+        ORDER BY Carts.transactionDate DESC
+        """
+
+        val = (admin_id,)
+
+        result = db_object.fetch_data(query, val)
+
+        return result
 
 cart_services = CartService()

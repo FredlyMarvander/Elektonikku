@@ -12,6 +12,9 @@ import threading
 from cart_service import cart_services 
 from CartDetail import CartDetail
 from cart_detail_service import cart_detail_service
+from datetime import date
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
 
 
 
@@ -351,7 +354,7 @@ class MainApp():
         main_frame.pack(fill=BOTH, expand=YES)
         
         # Header
-        header_frame = Frame(main_frame, bg=self.PRIMARY_COLOR, height=100)
+        header_frame = Frame(main_frame, bg="#4A70A9", height=100)
         header_frame.pack(fill=X)
         header_frame.pack_propagate(False)
         
@@ -359,7 +362,7 @@ class MainApp():
             header_frame,
             text="Create New Account",
             font=("Arial", 28, "bold"),
-            bg=self.PRIMARY_COLOR,
+            bg="#4A70A9",
             fg="white"
         ).pack(pady=30)
         
@@ -491,6 +494,20 @@ class MainApp():
         btn_back.bind("<Leave>", lambda e: e.widget.config(bg=self.LIGHT_BG))
 
     def process_register(self):
+        if not self.entry_username.get() or not self.entry_email.get() or not self.entry_password.get() or not self.entry_balance.get():
+            messagebox.showerror("Error", "All fields are required!")
+            return
+        
+        try:
+            balance = int(self.entry_balance.get())
+        except ValueError:
+            messagebox.showerror("Error", "Balance must be a number")
+            return
+        
+        if int(self.entry_balance.get()) < 1:
+            messagebox.showerror("Error", "Balance Must Greater than 0")
+            return
+
         username = self.entry_username.get()
         email = self.entry_email.get()
         password = self.entry_password.get()
@@ -510,6 +527,10 @@ class MainApp():
         self.customer()
 
     def proses_login_customer(self):
+        if not self.entry_email.get() or not self.entry_password.get():
+            messagebox.showerror("Error", "All fields are required!")
+            return
+
         email = self.entry_email.get()
         password = self.entry_password.get()
        
@@ -522,9 +543,15 @@ class MainApp():
             messagebox.showerror("Error", "Email or Password is Wrong")
 
     def proses_login_admin(self):
+        if not self.entry_email.get() or not self.entry_password.get():
+            messagebox.showerror("Error", "All fields are required!")
+            return
+
         email = self.entry_email.get()
         password = self.entry_password.get()
         self.login = user_services.login_admin(email, password)
+
+        self.current_admin_id = self.login[0]
         
         if (self.login):
             messagebox.showinfo("Info", "Login Successfully!")
@@ -577,7 +604,7 @@ class MainApp():
         self.btn_view_products.bind("<Enter>", lambda e: e.widget.config(bg="#096DD9"))
         self.btn_view_products.bind("<Leave>", lambda e: e.widget.config(bg=self.PRIMARY_COLOR))
         
-        # View Customers Button
+  
         self.btn_view_customers = Button(
             content_frame,
             text="View Customers",
@@ -616,6 +643,25 @@ class MainApp():
         self.btn_add_admin.pack(pady=12)
         self.btn_add_admin.bind("<Enter>", lambda e: e.widget.config(bg="#D46B08"))
         self.btn_add_admin.bind("<Leave>", lambda e: e.widget.config(bg=self.WARNING_COLOR))
+
+        self.btn_add_admin = Button(
+            content_frame,
+            text="View Sales Reports",
+            font=("Arial", 16, "bold"),
+            bg=self.WARNING_COLOR,
+            fg="white",
+            activebackground="#D46B08",
+            activeforeground="white",
+            relief=FLAT,
+            bd=0,
+            width=25,
+            pady=15,
+            cursor="hand2",
+            command=self.sales_reports
+        )
+        self.btn_add_admin.pack(pady=12)
+        self.btn_add_admin.bind("<Enter>", lambda e: e.widget.config(bg="#D46B08"))
+        self.btn_add_admin.bind("<Leave>", lambda e: e.widget.config(bg=self.WARNING_COLOR))
         
         # Logout Button
         self.btn_logout = Button(
@@ -636,6 +682,77 @@ class MainApp():
         self.btn_logout.pack(pady=12)
         self.btn_logout.bind("<Enter>", lambda e: e.widget.config(bg="#CF1322"))
         self.btn_logout.bind("<Leave>", lambda e: e.widget.config(bg=self.DANGER_COLOR))
+
+    def sales_reports(self):
+        self.clear_window()
+        
+        main_frame = Frame(self.root, bg=self.GRAY_BG)
+        main_frame.pack(fill=BOTH, expand=YES)
+        
+        # Header
+        header_frame = Frame(main_frame, bg="#4A70A9", height=100)
+        header_frame.pack(fill=X)
+        header_frame.pack_propagate(False)
+        
+        Label(
+            header_frame,
+            text="Sales Reports",
+            font=("Arial", 28, "bold"),
+            bg="#4A70A9",
+            fg="white"
+        ).pack(pady=30)
+        
+  
+        content_frame = Frame(main_frame, bg=self.LIGHT_BG)
+        content_frame.pack(pady=60, padx=200)
+        
+        inner_frame = Frame(content_frame, bg=self.LIGHT_BG)
+        inner_frame.pack(padx=60, pady=40)
+        
+        cart = cart_services.getCartAndCartDetails(self.current_admin_id)
+        
+        dates = []
+        totalPrices = []
+
+        for data in cart:
+            date = data[0]
+            totalPrice = data[1]
+
+            dates.append(date.strftime("%Y-%m-%d"))
+            totalPrices.append(totalPrice)
+
+
+
+        # Buat chart
+        fig, ax = plt.subplots()
+        ax.bar(dates, totalPrices)
+        ax.set_title("Total Penjualan per Tanggal")
+        ax.set_xlabel("Tanggal")
+        ax.set_ylabel("Total Penjualan")
+
+        # Embed ke Tkinter
+        chart = FigureCanvasTkAgg(fig, inner_frame)
+        chart.get_tk_widget().pack(fill="both", expand=True)
+
+     
+            
+        
+        # Back Button
+        btn_back = Button(
+            inner_frame,
+            text="← Back to Dashboard",
+            font=("Arial", 12),
+            bg=self.LIGHT_BG,
+            fg=self.SECONDARY_TEXT,
+            activebackground=self.GRAY_BG,
+            relief=FLAT,
+            bd=1,
+            cursor="hand2",
+            command=self.home_screen_admin
+        )
+        btn_back.pack(fill=X, ipady=8)
+        btn_back.bind("<Enter>", lambda e: e.widget.config(bg=self.GRAY_BG))
+        btn_back.bind("<Leave>", lambda e: e.widget.config(bg=self.LIGHT_BG))
 
     def add_admin(self):
         self.clear_window()
@@ -763,11 +880,18 @@ class MainApp():
         btn_back.bind("<Leave>", lambda e: e.widget.config(bg=self.LIGHT_BG))
 
     def proses_add_admin(self):
+
+
         username = self.entry_username.get()
         email = self.entry_email.get()
         password = self.entry_password.get()
         role = "admin"
         balance = 0
+
+        if not username or not email or not password:
+            messagebox.showerror("Error", "All Fields is Required!")
+            return
+
 
         existed_email = user_services.getUserByEmail(email)
         if existed_email:
@@ -890,8 +1014,10 @@ class MainApp():
         self.dataCustomers = user_services.getCustomers()
         i = 1
 
+       
         for customer in self.dataCustomers:
-            self.tableCustomers.insert("", "end", values=(i, customer[1], customer[2], customer[5]))
+            balance = f"Rp{customer[5]:,}".replace(",", ".")
+            self.tableCustomers.insert("", "end", values=(i, customer[1], customer[2], balance))
     
     def view_products(self):
         self.clear_window()
@@ -947,7 +1073,7 @@ class MainApp():
         
         self.btn_add_product = Button(
             action_frame,
-            text="➕ Add Product",
+            text="Add Product",
             font=("Arial", 11, "bold"),
             bg=self.SUCCESS_COLOR,
             fg="white",
@@ -1076,8 +1202,9 @@ class MainApp():
         self.image_urls = {}
         for product in self.products:
             
+            price = f"Rp {product[4]:,}".replace(",", ".")
            
-            self.table.insert("", "end",  values=(product[0], "View", product[1], product[2], product[4], product[5]))
+            self.table.insert("", "end",  values=(product[0], "View", product[1], product[2], price, product[5]))
 
             self.image_urls[product[0]] = product[3]
 
@@ -1286,11 +1413,41 @@ class MainApp():
         btn_back.bind("<Leave>", lambda e: e.widget.config(bg=self.LIGHT_BG))
 
     def proses_add_product(self):
+        if not self.entry_name.get() or not self.entry_description.get() or not self.entry_image_url.get() or self.entry_price.get() == "" or self.entry_stock.get() == "":
+            messagebox.showerror("Error", "All Field is Required!")
+            return
+        
+        
+        try:
+            price = int(self.entry_price.get())
+        except ValueError:
+            messagebox.showerror("Error", "Price must be a number")
+            return
+
+
+        try:
+            stock = int(self.entry_stock.get())
+        except ValueError:
+            messagebox.showerror("Error", "Stock must be a number")
+            return
+        
+        if int(self.entry_price.get()) < 1:
+            messagebox.showerror("Error", "Price Must Greater than 0")
+            return
+        
+        if int(self.entry_stock.get()) < 1:
+            messagebox.showerror("Error", "Stock Must Greater than 0")
+            return
+        
+        
+
         name = self.entry_name.get()
         description = self.entry_description.get()
         image = self.entry_image_url.get()
         price = int(self.entry_price.get())
         stock = int(self.entry_stock.get())
+
+        
 
         Product(name, description, image, price, stock, self.userId).insertProduct()
         messagebox.showinfo("Success", "Product added successfully!")
@@ -1444,7 +1601,7 @@ class MainApp():
                 highlightbackground="#D9D9D9",
                 highlightcolor="#4A70A9"
             )
-            self.entry_price.insert(0, product_values[4])
+            self.entry_price.insert(0, product_values[4].replace("Rp", "").replace(".", ""))
             self.entry_price.pack(fill=X, ipady=10, pady=(0, 15))
             
             # Stock
@@ -1505,6 +1662,32 @@ class MainApp():
             btn_back.bind("<Leave>", lambda e: e.widget.config(bg=self.LIGHT_BG))
 
     def proses_update_product(self, id):
+        if not self.entry_name.get() or not self.entry_description.get() or not self.entry_image_url.get() or self.entry_price.get() == "" or self.entry_stock.get() == "":
+            messagebox.showerror("Error", "All Field is Required!")
+            return
+        
+        
+        try:
+            price = int(self.entry_price.get())
+        except ValueError:
+            messagebox.showerror("Error", "Price must be a number")
+            return
+
+
+        try:
+            stock = int(self.entry_stock.get())
+        except ValueError:
+            messagebox.showerror("Error", "Stock must be a number")
+            return
+        
+        if int(self.entry_price.get()) < 1:
+            messagebox.showerror("Error", "Price Must Greater than 0")
+            return
+        
+        if int(self.entry_stock.get()) < 1:
+            messagebox.showerror("Error", "Stock Must Greater than 0")
+            return
+
         name = self.entry_name.get()
         description = self.entry_description.get()
         image_url = self.entry_image_url.get()
@@ -1635,11 +1818,13 @@ class MainApp():
             
             
             seller = user_services.getUserById(product[6])
+            
 
             card = self.create_product_card(scrollable_frame,
                                         product[3],
                                         product[1],
                                         product[4],
+                                        product[5],
                                         seller
                                         )
             card.grid(row=row, column=col, padx=20, pady=20)
@@ -1760,7 +1945,7 @@ class MainApp():
         self.dataHistory = cart_services.getAllCartsByUserId(self.current_customer_id)
         i = 1
         for history in self.dataHistory:
-            print(history)
+        
             if history[1] != None:
                 data = cart_detail_service.fetchCartDetailsByCartId(history[0])
                 for item in data:
@@ -1778,7 +1963,7 @@ class MainApp():
             
 
         self.cartId = cart_services.getCartByUserAndSeller(self.current_customer_id, sellerId)
-        print(self.cartId)
+   
 
        
         product_in_cart = cart_detail_service.checkProductInCart(self.cartId[0], name)
@@ -1833,7 +2018,7 @@ class MainApp():
         self.btn_back.pack(pady=5)
         
         self.fetch_cart_id = cart_services.getCartByUserId(self.current_customer_id)
-        print(self.fetch_cart_id)
+ 
         
         self.fetch_cart = cart_detail_service.fetchCartDetailsByCartId(self.fetch_cart_id[0]) if self.fetch_cart_id[0] else None
         
@@ -1960,7 +2145,7 @@ class MainApp():
         total_all = 0
       
         for item in self.fetch_cart:
-            print(item)
+
             cartId = item[4]
             transactionDate = cart_services.getCartById(cartId)
   
@@ -2095,7 +2280,7 @@ class MainApp():
                 # Remove button dengan styling modern
                 remove_btn = Button(
                     card, 
-                    text="🗑️ Remove", 
+                    text="Remove", 
                     font=("Arial", 10, "bold"), 
                     fg="white", 
                     bg="#e53935", 
@@ -2164,14 +2349,14 @@ class MainApp():
             return
         
         for item in self.fetch_cart:
-            print(item, "item")
+         
             name = item[1]
             quantity = item[3]
 
             
             product = product_services.getProductByName(name)
 
-            print(product, "product")
+         
 
             current_stock = product[5]
 
@@ -2194,7 +2379,7 @@ class MainApp():
 
         
     
-    def create_product_card(self, parent, image_url, name, price, seller):
+    def create_product_card(self, parent, image_url, name, price, stock, seller):
         card = Frame(parent, bg="white", bd=1, relief=SOLID)
 
         # Biar card tidak mengecil
@@ -2276,7 +2461,10 @@ class MainApp():
 
         # Info produk
         Label(card, text=name, font=("Arial", 12, "bold"), bg="white").pack()
-        Label(card, text=f"Rp {price:,}", fg="black", bg="white").pack()
+        price_formatted = f"Rp {price:,}".replace(",", ".")
+        Label(card, text=price_formatted, fg="black", bg="white").pack()
+        Label(card, text=f"Stock: {stock}", fg="black", bg="white").pack()
+        
         Label(card, text=f"🏪 {seller[1]}", fg="black", bg="white").pack()
 
         self.btn_add_to_cart = ttk.Button(
@@ -2296,47 +2484,121 @@ class MainApp():
     def add_balance(self):
         top = Toplevel(self.root)
         top.title("Add Balance")
-        top.geometry("320x180")
+        top.geometry("400x280")
         top.resizable(False, False)
+        top.configure(bg=self.LIGHT_BG)
 
-        Label(top, text="Masukkan jumlah top up:", font=("Arial", 12)).pack(pady=10)
+        # Header frame dengan warna #4A70A9
+        header_frame = Frame(top, bg="#4A70A9", height=60)
+        header_frame.pack(fill=X)
+        header_frame.pack_propagate(False)
+        
+        Label(
+            header_frame,
+            text="Add Balance",
+            font=("Arial", 18, "bold"),
+            bg="#4A70A9",
+            fg="white"
+        ).pack(pady=15)
+        
+        # Content frame
+        content_frame = Frame(top, bg=self.LIGHT_BG)
+        content_frame.pack(fill=BOTH, expand=True, padx=30, pady=20)
+        
+        Label(
+            content_frame,
+            text="Enter top-up amount:",
+            font=("Arial", 12, "bold"),
+            bg=self.LIGHT_BG,
+            fg=self.TEXT_COLOR
+        ).pack(pady=(0, 10))
 
-        entry_amount = Entry(top, font=("Arial", 12))
-        entry_amount.pack(pady=5)
+        entry_amount = Entry(
+            content_frame,
+            font=("Arial", 13),
+            bd=1,
+            relief=SOLID,
+            highlightthickness=2,
+            highlightbackground="#D9D9D9",
+            highlightcolor="#4A70A9",
+            justify="center"
+        )
+        entry_amount.pack(pady=5, ipady=8, padx=20)
 
         def process_add():
             # Validasi input
             try:
                 amount = int(entry_amount.get())
                 if amount <= 0:
-                    messagebox.showerror("Error", "Jumlah harus lebih dari 0!")
+                    messagebox.showerror("Error", "Amount must be greater than 0!")
                     return
             except ValueError:
-                messagebox.showerror("Error", "Input harus angka!")
+                messagebox.showerror("Error", "Input must be a number!")
                 return
 
             # Ambil balance dari DB
             user = user_services.getUserById(self.current_customer_id)
             if not user:
-                messagebox.showerror("Error", "User tidak ditemukan!")
+                messagebox.showerror("Error", "User not found!")
                 return
             current_balance = user[5] if user[5] is not None else 0
 
-            # Maksimal saldo 1.000.000
+            # Maksimal saldo 1.000.000.000
             if current_balance + amount > 1_000_000_000:
-                messagebox.showwarning("Error", "Balance tidak boleh melebihi 1.000.000_000!")
+                messagebox.showwarning("Error", "Balance Must not Greater than 1.000.000.000")
                 return
 
             # Update saldo di DB
             user_services.updateBalance(self.current_customer_id, current_balance + amount)
 
-            messagebox.showinfo("Success", "Balance berhasil ditambahkan!")
+            messagebox.showinfo("Success", "Balance successfully added!")
             top.destroy()
 
             # Refresh tampilan home & saldo
             self.home_screen_customer()
 
-        Button(top, text="Tambah", command=process_add, width=12).pack(pady=12)
+        # Button frame
+        button_frame = Frame(content_frame, bg=self.LIGHT_BG)
+        button_frame.pack(pady=20)
+        
+        # Add button
+        btn_add = Button(
+            button_frame,
+            text="Add Balance",
+            font=("Arial", 12, "bold"),
+            bg=self.SUCCESS_COLOR,
+            fg="white",
+            activebackground="#389E0D",
+            activeforeground="white",
+            relief=FLAT,
+            bd=0,
+            padx=25,
+            pady=10,
+            cursor="hand2",
+            command=process_add
+        )
+        btn_add.pack(side=RIGHT, padx=5)
+        btn_add.bind("<Enter>", lambda e: e.widget.config(bg="#389E0D"))
+        btn_add.bind("<Leave>", lambda e: e.widget.config(bg=self.SUCCESS_COLOR))
+        
+        # Cancel button
+        btn_cancel = Button(
+            button_frame,
+            text="Cancel",
+            font=("Arial", 12, "bold"),
+            bg=self.LIGHT_BG,
+            fg=self.SECONDARY_TEXT,
+            activebackground=self.GRAY_BG,
+            relief=FLAT,
+            bd=1,
+            padx=25,
+            pady=10,
+            cursor="hand2",
+            command=top.destroy
+        )
+        btn_cancel.pack(side=LEFT, padx=5)
+        btn_cancel.bind("<Enter>", lambda e: e.widget.config(bg=self.GRAY_BG))
+        btn_cancel.bind("<Leave>", lambda e: e.widget.config(bg=self.LIGHT_BG))
 
     # ----------------------------
     # End Add Balance
@@ -2356,26 +2618,146 @@ class MainApp():
     def show_profile(self):
         self.clear_window()  
         fetchUserData  = user_services.getUserById(self.current_customer_id)
-        print(fetchUserData)
         
-        frame = Frame(self.root)
-        frame.pack(pady=30)
-
-        Label(frame, text="User Profile", font=("Helvetica", 20, "bold")).grid(row=0, column=0, columnspan=2, pady=20)
-
-        Label(frame, text="Username:", font=("Helvetica", 14)).grid(row=1, column=0, sticky="w", padx=10, pady=5)
-        Label(frame, text=fetchUserData[1], font=("Helvetica", 14)).grid(row=1, column=1, sticky="w", padx=10, pady=5)
-
-        Label(frame, text="Email:", font=("Helvetica", 14)).grid(row=2, column=0, sticky="w", padx=10, pady=5)
-        Label(frame, text=fetchUserData[2], font=("Helvetica", 14)).grid(row=2, column=1, sticky="w", padx=10, pady=5)
-
-        Label(frame, text="Role:", font=("Helvetica", 14)).grid(row=3, column=0, sticky="w", padx=10, pady=5)
-        Label(frame, text=fetchUserData[4], font=("Helvetica", 14)).grid(row=3, column=1, sticky="w", padx=10, pady=5)
-
-        Label(frame, text="Balance:", font=("Helvetica", 14)).grid(row=4, column=0, sticky="w", padx=10, pady=5)
-        Label(frame, text=f"Rp {fetchUserData[5]:,}", font=("Helvetica", 14)).grid(row=4, column=1, sticky="w", padx=10, pady=5)
-
-        Button(self.root, text="Back", font=("Helvetica", 12), command=self.main_menu).pack(pady=20)
+        # Main frame
+        main_frame = Frame(self.root, bg=self.GRAY_BG)
+        main_frame.pack(fill=BOTH, expand=YES)
+        
+        # Header dengan warna #4A70A9
+        header_frame = Frame(main_frame, bg="#4A70A9", height=100)
+        header_frame.pack(fill=X)
+        header_frame.pack_propagate(False)
+        
+        Label(
+            header_frame,
+            text="👤 User Profile",
+            font=("Arial", 28, "bold"),
+            bg="#4A70A9",
+            fg="white"
+        ).pack(pady=30)
+        
+        # Content frame
+        content_frame = Frame(main_frame, bg=self.LIGHT_BG)
+        content_frame.pack(pady=60, padx=200, fill=BOTH, expand=YES)
+        
+        inner_frame = Frame(content_frame, bg=self.LIGHT_BG)
+        inner_frame.pack(padx=60, pady=40)
+        
+        # Profile card container
+        profile_card = Frame(inner_frame, bg=self.LIGHT_BG)
+        profile_card.pack(fill=X, pady=20)
+        
+        # Username
+        user_frame = Frame(profile_card, bg=self.LIGHT_BG)
+        user_frame.pack(fill=X, pady=15)
+        
+        Label(
+            user_frame,
+            text="Username:",
+            font=("Arial", 14, "bold"),
+            bg=self.LIGHT_BG,
+            fg=self.TEXT_COLOR,
+            width=15,
+            anchor=W
+        ).pack(side=LEFT, padx=(0, 20))
+        
+        Label(
+            user_frame,
+            text=fetchUserData[1],
+            font=("Arial", 14),
+            bg=self.LIGHT_BG,
+            fg=self.TEXT_COLOR,
+            anchor=W
+        ).pack(side=LEFT)
+        
+        # Email
+        email_frame = Frame(profile_card, bg=self.LIGHT_BG)
+        email_frame.pack(fill=X, pady=15)
+        
+        Label(
+            email_frame,
+            text="Email:",
+            font=("Arial", 14, "bold"),
+            bg=self.LIGHT_BG,
+            fg=self.TEXT_COLOR,
+            width=15,
+            anchor=W
+        ).pack(side=LEFT, padx=(0, 20))
+        
+        Label(
+            email_frame,
+            text=fetchUserData[2],
+            font=("Arial", 14),
+            bg=self.LIGHT_BG,
+            fg=self.TEXT_COLOR,
+            anchor=W
+        ).pack(side=LEFT)
+        
+        # Role
+        role_frame = Frame(profile_card, bg=self.LIGHT_BG)
+        role_frame.pack(fill=X, pady=15)
+        
+        Label(
+            role_frame,
+            text="Role:",
+            font=("Arial", 14, "bold"),
+            bg=self.LIGHT_BG,
+            fg=self.TEXT_COLOR,
+            width=15,
+            anchor=W
+        ).pack(side=LEFT, padx=(0, 20))
+        
+        Label(
+            role_frame,
+            text=fetchUserData[4].capitalize(),
+            font=("Arial", 14),
+            bg=self.LIGHT_BG,
+            fg=self.TEXT_COLOR,
+            anchor=W
+        ).pack(side=LEFT)
+        
+        # Balance
+        balance_frame = Frame(profile_card, bg=self.LIGHT_BG)
+        balance_frame.pack(fill=X, pady=15)
+        
+        Label(
+            balance_frame,
+            text="Balance:",
+            font=("Arial", 14, "bold"),
+            bg=self.LIGHT_BG,
+            fg=self.TEXT_COLOR,
+            width=15,
+            anchor=W
+        ).pack(side=LEFT, padx=(0, 20))
+        
+        Label(
+            balance_frame,
+            text=f"Rp {fetchUserData[5]:,}",
+            font=("Arial", 14, "bold"),
+            bg=self.LIGHT_BG,
+            fg=self.SUCCESS_COLOR,
+            anchor=W
+        ).pack(side=LEFT)
+        
+        # Back Button
+        btn_back = Button(
+            inner_frame,
+            text="← Back to Home",
+            font=("Arial", 14, "bold"),
+            bg="#4A70A9",
+            fg="white",
+            activebackground="#096DD9",
+            activeforeground="white",
+            relief=FLAT,
+            bd=0,
+            padx=30,
+            pady=12,
+            cursor="hand2",
+            command=self.home_screen_customer
+        )
+        btn_back.pack(pady=30)
+        btn_back.bind("<Enter>", lambda e: e.widget.config(bg="#096DD9"))
+        btn_back.bind("<Leave>", lambda e: e.widget.config(bg="#4A70A9"))
 
 
 

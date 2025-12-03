@@ -18,6 +18,8 @@ class User:
         values = (self.username, self.email, self.password, self.role, self.balance)
         db_object.insert_data(query, values)
         print("User berhasil diregistrasi!")
+
+    
   
     
         

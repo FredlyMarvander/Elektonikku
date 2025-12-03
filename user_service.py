@@ -32,14 +32,7 @@ class UserService:
 
         if len(result) > 0:
             row = result[0]
-            user = User(
-                username=row[0],
-                email=row[1],
-                password=row[2],
-                role=row[3],
-                balance=row[4]
-            )
-            return user
+            return row
         
         else:
             return None
