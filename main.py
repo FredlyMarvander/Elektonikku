@@ -119,7 +119,7 @@ class MainApp():
             command=self.customer
         )
         self.buttonCustomer.pack(pady=15)
-        self.buttonCustomer.bind("<Enter>", lambda e: e.widget.config(bg="#389E0D"))
+        self.buttonCustomer.bind("<Enter>", lambda e: e.widget.config(bg="#4A70A9"))
         self.buttonCustomer.bind("<Leave>", lambda e: e.widget.config(bg=self.SUCCESS_COLOR))
 
     def admin(self):
@@ -1834,7 +1834,7 @@ class MainApp():
 
 
             col += 1
-            if col == 5:
+            if col == 4:
                 col = 0
                 row += 1
 
