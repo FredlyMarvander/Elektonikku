@@ -62,8 +62,8 @@ class CartService:
             FROM Carts
             WHERE userId = %s
             AND sellerId = %s
+            AND transactionDate IS NULL
             ORDER BY ID DESC
-            LIMIT 1
         """
         val = (userId, sellerId)
         result = db_object.fetch_data(query, val)

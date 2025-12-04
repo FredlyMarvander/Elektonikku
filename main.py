@@ -472,8 +472,7 @@ class MainApp():
             command=self.process_register
         )
         self.btn_register.pack(fill=X, ipady=12, pady=(0, 10))
-        self.btn_register.bind("<Enter>", lambda e: e.widget.config(bg="#389E0D"))
-        self.btn_register.bind("<Leave>", lambda e: e.widget.config(bg=self.SUCCESS_COLOR))
+
         
         # Back Button
         btn_back = Button(
@@ -2109,7 +2108,7 @@ class MainApp():
         self.cartId = cart_services.getCartByUserAndSeller(self.current_customer_id, sellerId)
    
 
-       
+     
         product_in_cart = cart_detail_service.checkProductInCart(self.cartId[0], name)
         
 
@@ -2160,12 +2159,12 @@ class MainApp():
             command=self.home_screen_customer
         )
         self.btn_back.pack(pady=5)
-        
+      
         self.fetch_cart_id = cart_services.getCartByUserId(self.current_customer_id)
  
-        
+       
         self.fetch_cart = cart_detail_service.fetchCartDetailsByCartId(self.fetch_cart_id[0]) if self.fetch_cart_id[0] else None
-        
+  
         if not self.fetch_cart:
             # Empty cart design yang menarik
             empty_frame = Frame(self.root, bg="white")
@@ -2518,7 +2517,9 @@ class MainApp():
 
         cart_services.checkoutCart(current_user_id, self.fetch_cart_id[0], self.total)
 
+        cart_services.createNewCart(current_user_id) 
         messagebox.showinfo("Success", "Checkout successful!")
+
         self.home_screen_customer()
 
         
