@@ -45,7 +45,7 @@ class MainApp():
         main_frame.pack(fill=BOTH, expand=YES)
         
         # Header Section
-        header_frame = Frame(main_frame, bg="#4A70A9", height=100)
+        header_frame = Frame(main_frame, bg="#4A70A9", height=120)
         header_frame.pack(fill=X)
         header_frame.pack_propagate(False)
         
@@ -91,7 +91,7 @@ class MainApp():
             fg="white",
             activebackground="#4A70A9",
             activeforeground="white",
-            relief=FLAT,
+        
             bd=0,
             padx=40,
             pady=20,
@@ -99,8 +99,7 @@ class MainApp():
             command=self.admin
         )
         self.buttonAdmin.pack(pady=15)
-        self.buttonAdmin.bind("<Enter>", lambda e: e.widget.config(bg="#096DD9"))
-        self.buttonAdmin.bind("<Leave>", lambda e: e.widget.config(bg=self.INFO_COLOR))
+
         
         # Customer Button
         self.buttonCustomer = Button(
@@ -111,7 +110,7 @@ class MainApp():
             fg="white",
             activebackground="#4A70A9",
             activeforeground="white",
-            relief=FLAT,
+          
             bd=0,
             padx=40,
             pady=20,
@@ -119,8 +118,7 @@ class MainApp():
             command=self.customer
         )
         self.buttonCustomer.pack(pady=15)
-        self.buttonCustomer.bind("<Enter>", lambda e: e.widget.config(bg="#4A70A9"))
-        self.buttonCustomer.bind("<Leave>", lambda e: e.widget.config(bg=self.SUCCESS_COLOR))
+
 
     def admin(self):
         self.clear_window()
@@ -300,9 +298,9 @@ class MainApp():
             inner_frame,
             text="Login",
             font=("Arial", 14, "bold"),
-            bg=self.SUCCESS_COLOR,
+            bg="#4A70A9",
             fg="white",
-            activebackground="#389E0D",
+            activebackground="#4A70A9",
             activeforeground="white",
             relief=FLAT,
             bd=0,
@@ -310,8 +308,7 @@ class MainApp():
             command=self.proses_login_customer
         )
         self.btn_login.pack(fill=X, ipady=12, pady=(0, 10))
-        self.btn_login.bind("<Enter>", lambda e: e.widget.config(bg="#389E0D"))
-        self.btn_login.bind("<Leave>", lambda e: e.widget.config(bg=self.SUCCESS_COLOR))
+
         
         # Register Button
         self.btn_register = Button(
@@ -367,11 +364,13 @@ class MainApp():
         ).pack(pady=30)
         
         # Content with scrollbar
-        content_frame = Frame(main_frame, bg=self.LIGHT_BG)
-        content_frame.pack(pady=40, padx=200, fill=BOTH, expand=YES)
+        content_frame = Frame(main_frame, bg=self.LIGHT_BG, width=400, height=800)
+        content_frame.pack(pady=10, padx=200)
+        content_frame.pack_propagate(False)
         
-        inner_frame = Frame(content_frame, bg=self.LIGHT_BG)
-        inner_frame.pack(padx=60, pady=30)
+        inner_frame = Frame(content_frame, bg=self.LIGHT_BG, width=300, height=700)
+        inner_frame.pack(padx=30, pady=20)
+        inner_frame.pack_propagate(False)
         
         # Username
         Label(
@@ -705,14 +704,16 @@ class MainApp():
         ).pack(pady=30)
         
   
-        content_frame = Frame(main_frame, bg=self.LIGHT_BG)
-        content_frame.pack(pady=60, padx=200)
+        content_frame = Frame(main_frame, bg=self.LIGHT_BG, width=700, height=700)
+        content_frame.pack(pady=10, padx=200)
+        content_frame.pack_propagate(False)
         
-        inner_frame = Frame(content_frame, bg=self.LIGHT_BG)
-        inner_frame.pack(padx=60, pady=40)
+        inner_frame = Frame(content_frame, bg=self.LIGHT_BG, width=600, height=700)
+        inner_frame.pack(padx=30, pady=10)
+        inner_frame.pack_propagate(False)
         
         cart = cart_services.getCartAndCartDetails(self.current_admin_id)
-        print(cart)
+        
         
         dates = []
         totalPrices = []
@@ -762,6 +763,7 @@ class MainApp():
         
         main_frame = Frame(self.root, bg=self.GRAY_BG)
         main_frame.pack(fill=BOTH, expand=YES)
+
         
         # Header
         header_frame = Frame(main_frame, bg="#4A70A9", height=100)
@@ -777,12 +779,13 @@ class MainApp():
         ).pack(pady=30)
         
         # Content
-        content_frame = Frame(main_frame, bg=self.LIGHT_BG)
-        content_frame.pack(pady=60, padx=200)
+        content_frame = Frame(main_frame, bg=self.LIGHT_BG, width=400, height=700)
+        content_frame.pack(pady=20, padx=200)
+        content_frame.pack_propagate(False)
         
-        inner_frame = Frame(content_frame, bg=self.LIGHT_BG)
-        inner_frame.pack(padx=60, pady=40)
-        
+        inner_frame = Frame(content_frame, bg=self.LIGHT_BG, width=300, height=600)
+        inner_frame.pack(padx=30, pady=40)
+        inner_frame.pack_propagate(False)
         # Username
         Label(
             inner_frame,
@@ -1059,7 +1062,7 @@ class MainApp():
             fg="white",
             activebackground="#096DD9",
             activeforeground="white",
-            relief=FLAT,
+          
             bd=0,
             padx=20,
             pady=10,
@@ -1266,14 +1269,16 @@ class MainApp():
             font=("Arial", 28, "bold"),
             bg="#4A70A9",
             fg="white"
-        ).pack(pady=30)
+        ).pack(pady=10)
         
         # Content frame
-        content_frame = Frame(main_frame, bg=self.LIGHT_BG)
-        content_frame.pack(pady=60, padx=200)
+        content_frame = Frame(main_frame, bg=self.LIGHT_BG, width=400, height=800)
+        content_frame.pack(pady=10, padx=200)
+        content_frame.pack_propagate(False)
         
-        inner_frame = Frame(content_frame, bg=self.LIGHT_BG)
-        inner_frame.pack(padx=60, pady=40)
+        inner_frame = Frame(content_frame, bg=self.LIGHT_BG, width=300, height=700)
+        inner_frame.pack(padx=30, pady=20)
+        inner_frame.pack_propagate(False)
         
         # Product Name
         Label(
@@ -1294,7 +1299,7 @@ class MainApp():
             highlightbackground="#D9D9D9",
             highlightcolor="#4A70A9"
         )
-        self.entry_name.pack(fill=X, ipady=10, pady=(0, 15))
+        self.entry_name.pack(fill=X, ipady=7, pady=(0, 5))
         
         # Description
         Label(
@@ -1315,7 +1320,7 @@ class MainApp():
             highlightbackground="#D9D9D9",
             highlightcolor="#4A70A9"
         )
-        self.entry_description.pack(fill=X, ipady=10, pady=(0, 15))
+        self.entry_description.pack(fill=X, ipady=7, pady=(0, 5))
         
         # Image URL
         Label(
@@ -1336,7 +1341,7 @@ class MainApp():
             highlightbackground="#D9D9D9",
             highlightcolor="#4A70A9"
         )
-        self.entry_image_url.pack(fill=X, ipady=10, pady=(0, 15))
+        self.entry_image_url.pack(fill=X, ipady=7, pady=(0, 5))
         
         # Price
         Label(
@@ -1357,7 +1362,7 @@ class MainApp():
             highlightbackground="#D9D9D9",
             highlightcolor="#4A70A9"
         )
-        self.entry_price.pack(fill=X, ipady=10, pady=(0, 15))
+        self.entry_price.pack(fill=X, ipady=7, pady=(0, 5))
         
         # Stock
         Label(
@@ -1378,7 +1383,7 @@ class MainApp():
             highlightbackground="#D9D9D9",
             highlightcolor="#4A70A9"
         )
-        self.entry_stock.pack(fill=X, ipady=10, pady=(0, 25))
+        self.entry_stock.pack(fill=X, ipady=7, pady=(5, 5))
         
         # Add Product Button
         self.btn_add_product = Button(
@@ -1394,7 +1399,7 @@ class MainApp():
             cursor="hand2",
             command=self.proses_add_product
         )
-        self.btn_add_product.pack(fill=X, ipady=12, pady=(0, 10))
+        self.btn_add_product.pack(fill=X, ipady=7, pady=(0, 10))
         self.btn_add_product.bind("<Enter>", lambda e: e.widget.config(bg="#389E0D"))
         self.btn_add_product.bind("<Leave>", lambda e: e.widget.config(bg=self.SUCCESS_COLOR))
         
@@ -1506,19 +1511,21 @@ class MainApp():
             
             Label(
                 header_frame,
-                text="✏️ Edit Product",
+                text="Edit Product",
                 font=("Arial", 28, "bold"),
                 bg="#4A70A9",
                 fg="white"
             ).pack(pady=30)
             
             # Content frame
-            content_frame = Frame(main_frame, bg=self.LIGHT_BG)
-            content_frame.pack(pady=60, padx=200)
+            content_frame = Frame(main_frame, bg=self.LIGHT_BG, width=400, height=800)
+            content_frame.pack(pady=10, padx=200)
+            content_frame.pack_propagate(False)
             
-            inner_frame = Frame(content_frame, bg=self.LIGHT_BG)
-            inner_frame.pack(padx=60, pady=40)
-            
+            inner_frame = Frame(content_frame, bg=self.LIGHT_BG, width=300, height=700)
+            inner_frame.pack(padx=30, pady=20)
+            inner_frame.pack_propagate(False)
+                
             # Product Name
             Label(
                 inner_frame,
@@ -1539,7 +1546,7 @@ class MainApp():
                 highlightcolor="#4A70A9"
             )
             self.entry_name.insert(0, product_values[2])
-            self.entry_name.pack(fill=X, ipady=10, pady=(0, 15))
+            self.entry_name.pack(fill=X, ipady=7, pady=(0, 7))
             
             # Description
             Label(
@@ -1561,7 +1568,7 @@ class MainApp():
                 highlightcolor="#4A70A9"
             )
             self.entry_description.insert(0, product_values[3])
-            self.entry_description.pack(fill=X, ipady=10, pady=(0, 15))
+            self.entry_description.pack(fill=X, ipady=7, pady=(0, 7))
             
             # Image URL
             Label(
@@ -1583,7 +1590,7 @@ class MainApp():
                 highlightcolor="#4A70A9"
             )
             self.entry_image_url.insert(0, image)
-            self.entry_image_url.pack(fill=X, ipady=10, pady=(0, 15))
+            self.entry_image_url.pack(fill=X, ipady=7, pady=(0, 7))
             
             # Price
             Label(
@@ -1605,7 +1612,7 @@ class MainApp():
                 highlightcolor="#4A70A9"
             )
             self.entry_price.insert(0, product_values[4].replace("Rp", "").replace(".", ""))
-            self.entry_price.pack(fill=X, ipady=10, pady=(0, 15))
+            self.entry_price.pack(fill=X, ipady=7, pady=(0, 7))
             
             # Stock
             Label(
@@ -1627,7 +1634,7 @@ class MainApp():
                 highlightcolor="#4A70A9"
             )
             self.entry_stock.insert(0, product_values[5])
-            self.entry_stock.pack(fill=X, ipady=10, pady=(0, 25))
+            self.entry_stock.pack(fill=X, ipady=7, pady=(0, 25))
             
             # Update Product Button
             self.btn_update_product = Button(
@@ -1643,7 +1650,7 @@ class MainApp():
                 cursor="hand2",
                 command=lambda: self.proses_update_product(int(product_values[0]))
             )
-            self.btn_update_product.pack(fill=X, ipady=12, pady=(0, 10))
+            self.btn_update_product.pack(fill=X, ipady=7, pady=(0, 5))
             self.btn_update_product.bind("<Enter>", lambda e: e.widget.config(bg="#D46B08"))
             self.btn_update_product.bind("<Leave>", lambda e: e.widget.config(bg=self.WARNING_COLOR))
             
@@ -1660,7 +1667,7 @@ class MainApp():
                 cursor="hand2",
                 command=self.view_products
             )
-            btn_back.pack(fill=X, ipady=8)
+            btn_back.pack(fill=X, ipady=8, pady=5)
             btn_back.bind("<Enter>", lambda e: e.widget.config(bg=self.GRAY_BG))
             btn_back.bind("<Leave>", lambda e: e.widget.config(bg=self.LIGHT_BG))
 
@@ -1860,11 +1867,11 @@ class MainApp():
         
         # Content frame
         content_frame = Frame(main_frame, bg=self.LIGHT_BG)
-        content_frame.pack(fill=BOTH, expand=True, padx=40, pady=30)
+        content_frame.pack(fill=BOTH, expand=True, padx=10, pady=30)
         
         # Back button
         btn_back_frame = Frame(content_frame, bg=self.LIGHT_BG)
-        btn_back_frame.pack(fill=X, pady=(0, 15))
+        btn_back_frame.pack(fill=X, pady=(0, 10))
         
         btn_back = Button(
             btn_back_frame,
@@ -1902,7 +1909,7 @@ class MainApp():
         style.configure(
             "History.Treeview.Heading",
             background="#4A70A9",
-            foreground="white",
+            foreground="black",
             font=("Arial", 11, "bold"),
             borderwidth=0
         )
@@ -2009,7 +2016,7 @@ class MainApp():
         style.configure(
             "Details.Treeview.Heading",
             background="#4A70A9",
-            foreground="white",
+            foreground="black",
             font=("Arial", 11, "bold"),
             borderwidth=0,
             padding=(8, 6)
@@ -2232,7 +2239,7 @@ class MainApp():
             
             # Total price container
             total_container = Frame(footer_frame, bg="white")
-            total_container.pack(pady=15)
+            total_container.pack(pady=10)
             
             Label(
                 total_container,
@@ -2240,7 +2247,7 @@ class MainApp():
                 font=("Arial", 22, "bold"),
                 bg="white",
                 fg="black",
-            ).pack(pady=20)
+            ).pack(pady=10)
             
             Label(
                 total_container,
@@ -2264,11 +2271,11 @@ class MainApp():
                 footer_frame,
                 text="Proceed to Checkout",
                 font=("Arial", 14, "bold"),
-                bg="#4CAF50",
+                bg="#4A70A9",
                 fg="white",
                 relief="flat",
                 padx=30,
-                pady=12,
+                pady=7,
                 cursor="hand2",
                 command=lambda: self.checkout(self.current_customer_id)
             )
@@ -2705,9 +2712,9 @@ class MainApp():
             button_frame,
             text="Add Balance",
             font=("Arial", 12, "bold"),
-            bg=self.SUCCESS_COLOR,
+            bg="#4A70A9",
             fg="white",
-            activebackground="#389E0D",
+            activebackground="#4A70A9",
             activeforeground="white",
             relief=FLAT,
             bd=0,
@@ -2717,8 +2724,7 @@ class MainApp():
             command=process_add
         )
         btn_add.pack(side=RIGHT, padx=5)
-        btn_add.bind("<Enter>", lambda e: e.widget.config(bg="#389E0D"))
-        btn_add.bind("<Leave>", lambda e: e.widget.config(bg=self.SUCCESS_COLOR))
+
         
         # Cancel button
         btn_cancel = Button(
@@ -2893,7 +2899,7 @@ class MainApp():
             cursor="hand2",
             command=self.home_screen_customer
         )
-        btn_back.pack(pady=30)
+        btn_back.pack(pady=10)
         btn_back.bind("<Enter>", lambda e: e.widget.config(bg="#096DD9"))
         btn_back.bind("<Leave>", lambda e: e.widget.config(bg="#4A70A9"))
 

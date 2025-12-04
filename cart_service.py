@@ -138,14 +138,18 @@ class CartService:
 
     def getCartAndCartDetailsCustomer(self, user_id):
         query = """
-        SELECT Carts.id, Carts.transactionDate AS transactionDate, SUM(CartDetails.price) AS totalPrice, COUNT(CartDetails.id) AS itemCount
-        FROM Carts
-        JOIN CartDetails ON Carts.id = CartDetails.cartId
-        WHERE Carts.transactionDate IS NOT NULL AND userId = %s
-        GROUP BY Carts.transactionDate
-
-        ORDER BY Carts.transactionDate DESC
-        """
+            SELECT 
+                Carts.id, 
+                Carts.transactionDate AS transactionDate,
+                SUM(CartDetails.price) AS totalPrice,
+                COUNT(CartDetails.id) AS itemCount
+            FROM Carts
+            JOIN CartDetails ON Carts.id = CartDetails.cartId
+            WHERE Carts.transactionDate IS NOT NULL 
+            AND Carts.userId = %s
+            GROUP BY Carts.id, Carts.transactionDate
+            ORDER BY Carts.transactionDate DESC;
+            """
 
         val = (user_id,)
 
