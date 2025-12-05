@@ -1953,8 +1953,10 @@ class MainApp():
 
     def load_data_history(self):
         self.dataHistory = cart_services.getCartAndCartDetailsCustomer(self.current_customer_id)
+        
 
         for history in self.dataHistory:
+    
             self.tableHistory.insert("", "end", values=(history[0], history[1], f"Rp{history[2]:,}", "View Details"))
             
     def on_table_click_history(self, event):
@@ -1973,130 +1975,95 @@ class MainApp():
 
                 self.view_history_details(cart_id)
 
-    def view_history_details(self, cart_id):
-        details = cart_detail_service.fetchCartDetailsByCartId(cart_id)
+    def view_history_details(self, cart_ids):
+        if isinstance(cart_ids, str):
+            if "," in cart_ids:                
+                cart_ids = cart_ids.split(",")
+            else:
+                cart_ids = [cart_ids]           
+        elif isinstance(cart_ids, int):
+            cart_ids = [cart_ids]             
+
+        cart_ids = [int(i) for i in cart_ids]  
         
+        all_details = []
+        for cid in cart_ids:
+            details = cart_detail_service.fetchCartDetailsByCartId(cid)
+            all_details.extend(details)
+
+   
         detail_window = Toplevel(self.root)
-        detail_window.title(f"Cart Details - ID: {cart_id}")
+        detail_window.title("Cart Details")
         detail_window.geometry("800x600")
         detail_window.configure(bg=self.GRAY_BG)
-        
-        # Header frame
+
         header_frame = Frame(detail_window, bg="#4A70A9", height=80)
         header_frame.pack(fill=X)
         header_frame.pack_propagate(False)
-        
-        Label(
-            header_frame,
-            text=f"Cart Details - ID: {cart_id}",
-            font=("Arial", 24, "bold"),
-            bg="#4A70A9",
-            fg="white"
-        ).pack(pady=25)
-        
-  
+
+        Label(header_frame, text="History Details", font=("Arial", 24, "bold"),
+            bg="#4A70A9", fg="white").pack(pady=25)
+
         content_frame = Frame(detail_window, bg=self.LIGHT_BG)
         content_frame.pack(fill=BOTH, expand=True, padx=30, pady=20)
-        
- 
+
         table_container = Frame(content_frame, bg=self.LIGHT_BG, bd=2, relief=SOLID)
         table_container.pack(fill=BOTH, expand=True)
-        
-  
+
         style = ttk.Style()
-        style.configure(
-            "Details.Treeview",
-            background="white",
-            foreground=self.TEXT_COLOR,
-            rowheight=110,
-            fieldbackground="white",
-            borderwidth=0
-        )
-        style.configure(
-            "Details.Treeview.Heading",
-            background="#4A70A9",
-            foreground="black",
-            font=("Arial", 11, "bold"),
-            borderwidth=0,
-            padding=(8, 6)
-        )
-        style.map(
-            "Details.Treeview",
-            background=[("selected", "#4A70A9")],
-            foreground=[("selected", "white")]
-        )
-        
-    
+        style.configure("Details.Treeview", background="white", foreground=self.TEXT_COLOR,
+                        rowheight=110, fieldbackground="white", borderwidth=0)
+        style.configure("Details.Treeview.Heading", background="#4A70A9",
+                        foreground="black", font=("Arial", 11, "bold"),
+                        borderwidth=0, padding=(8, 6))
+        style.map("Details.Treeview", background=[("selected", "#4A70A9")],
+                foreground=[("selected", "white")])
+
         scrollbar = ttk.Scrollbar(table_container, orient=VERTICAL)
-        
 
-        tree = ttk.Treeview(
-            table_container,
-            columns=("Name", "Quantity", "Price"),
-            show="tree headings",
-            style="Details.Treeview",
-            yscrollcommand=scrollbar.set
-        )
-        
+        tree = ttk.Treeview(table_container, columns=("Name","Quantity","Price"),
+                            show="tree headings", style="Details.Treeview",
+                            yscrollcommand=scrollbar.set)
+
         scrollbar.config(command=tree.yview)
-        
+
         tree.heading("#0", text="Image")
-        
         tree.heading("Name", text="Product Name")
-        tree.heading("Quantity", text="Quantity")
+        tree.heading("Quantity", text="Qty")
         tree.heading("Price", text="Price")
-        
+
         tree.column("#0", width=120, anchor="center")
-        
         tree.column("Name", width=250, anchor="center")
-        tree.column("Quantity", width=120, anchor="center")
+        tree.column("Quantity", width=100, anchor="center")
         tree.column("Price", width=150, anchor="center")
-        
+
         self.history_images = []
-       
-        for detail in details:
+
+        for detail in all_details:
+            try:
+                img_url = detail[5]
+                response = requests.get(img_url)
+                img_data = Image.open(BytesIO(response.content)).resize((100,100))
+                
+            except Exception as e:
+  
+
+                img_data = Image.new("RGB", (100, 100), color="#cccccc")
             
-            img_url = detail[5]
-            response = requests.get(img_url)
-            img_data = Image.open(BytesIO(response.content))
-
-     
-            img_data = img_data.resize((100, 100))
-
             img = ImageTk.PhotoImage(img_data)
-
             self.history_images.append(img)
-        
-            tree.insert("", "end", image=img, values=(detail[1], detail[3], f"Rp{detail[2]:,}"))
-            
 
-      
+            tree.insert("", "end", image=img,
+                        values=(detail[1], detail[3], f"Rp{detail[2]:,}"))
+
         tree.pack(side=LEFT, fill=BOTH, expand=True)
         scrollbar.pack(side=RIGHT, fill=Y)
-        
 
         btn_frame = Frame(detail_window, bg=self.LIGHT_BG)
-        btn_frame.pack(fill=X, padx=30, pady=(0, 20))
-        
-        btn_close = Button(
-            btn_frame,
-            text="✕ Close",
-            font=("Arial", 12, "bold"),
-            bg=self.DANGER_COLOR,
-            fg="white",
-            activebackground="#CF1322",
-            activeforeground="white",
-            relief=FLAT,
-            bd=0,
-            padx=30,
-            pady=10,
-            cursor="hand2",
-            command=detail_window.destroy
-        )
-        btn_close.pack()
-        btn_close.bind("<Enter>", lambda e: e.widget.config(bg="#CF1322"))
-        btn_close.bind("<Leave>", lambda e: e.widget.config(bg=self.DANGER_COLOR))
-        
+        btn_frame.pack(fill=X, padx=30, pady=(0,20))
+
+        Button(btn_frame, text="✕ Close", font=("Arial",12,"bold"), bg=self.DANGER_COLOR,
+            fg="white", padx=30, pady=10, command=detail_window.destroy).pack()
 
     def add_to_cart_process(self, sellerId, name, price, image_url):
         checkCart = cart_services.checkCartActive(self.current_customer_id, sellerId)
@@ -2159,13 +2126,16 @@ class MainApp():
             command=self.home_screen_customer
         )
         self.btn_back.pack(pady=5)
+
+        self.fetch_cart_customer = cart_services.getCartViewByUserId(self.current_customer_id)
       
-        self.fetch_cart_id = cart_services.getCartByUserId(self.current_customer_id)
- 
+      
+        # self.fetch_cart_id = cart_services.getCartByUserId(self.current_customer_id)
+
        
-        self.fetch_cart = cart_detail_service.fetchCartDetailsByCartId(self.fetch_cart_id[0]) if self.fetch_cart_id[0] else None
+        # self.fetch_cart = cart_detail_service.fetchCartDetailsByCartId(self.fetch_cart_id[0]) if self.fetch_cart_id[0] else None
   
-        if not self.fetch_cart:
+        if not self.fetch_cart_customer:
             # Empty cart design yang menarik
             empty_frame = Frame(self.root, bg="white")
             empty_frame.pack(fill="both", expand=True)
@@ -2195,7 +2165,7 @@ class MainApp():
         
         else:
          
-            self.cart_detail_info = cart_detail_service.fetchCartDetailsByCartId(self.fetch_cart_id[0])
+       
             
             # Main container dengan background
             main_container = Frame(self.root, bg="#f5f5f5")
@@ -2289,16 +2259,12 @@ class MainApp():
 
         total_all = 0
       
-        for item in self.fetch_cart:
-
-            cartId = item[4]
-            transactionDate = cart_services.getCartById(cartId)
-  
-            if transactionDate[0][0] == None:
-                name = item[1]
-                price = item[2]
-                quantity = item[3]
-                image_url = item[5]
+        for item in self.fetch_cart_customer:
+                cartId = item[0]
+                name = item[5]
+                price = item[6]
+                quantity = item[7]
+                image_url = item[9]
 
                 subtotal = price * quantity
                 total_all += subtotal
@@ -2394,7 +2360,7 @@ class MainApp():
                     fg="#333",
                     relief="flat",
                     cursor="hand2",
-                    command=lambda n=name: self.decrease_qty(n)
+                    command=lambda n=name, c=cartId: self.decrease_qty(n, c)
                 )
                 btn_decrease.pack(side="left", padx=2)
                 
@@ -2418,7 +2384,7 @@ class MainApp():
                     fg="white",
                     relief="flat",
                     cursor="hand2",
-                    command=lambda n=name: self.increase_qty(n)
+                    command=lambda n=name, c=cartId: self.increase_qty(n, c)
                 )
                 btn_increase.pack(side="left", padx=2)
 
@@ -2431,15 +2397,16 @@ class MainApp():
                     bg="#e53935", 
                     relief="flat",
                     cursor="hand2",
-                    command=lambda n=name: self.remove_item(n)
+                    command=lambda n=name, c=cartId: self.remove_item(n, c)
                 )
                 remove_btn.grid(row=0, column=3, rowspan=3, padx=15, pady=10, sticky="e")
             
         return total_all
             
-    def increase_qty(self, name):
-        cart_detail_service.increaseQuantity(self.fetch_cart_id[0], name)
-        self.fetch_cart = cart_detail_service.fetchCartDetailsByCartId(self.fetch_cart_id[0])
+    def increase_qty(self, name, cartId):
+    
+        cart_detail_service.increaseQuantity(cartId, name)
+        self.fetch_cart_customer = cart_services.getCartViewByUserId(self.current_customer_id)
         
         # Clear old widgets
         for widget in self.scrollable_cart_frame.winfo_children():
@@ -2451,9 +2418,9 @@ class MainApp():
         # Update total label
         self.total_label.config(text=f"Rp {self.total:,}")
         
-    def decrease_qty(self, name):
-        cart_detail_service.decreaseQuantity(self.fetch_cart_id[0], name)
-        self.fetch_cart = cart_detail_service.fetchCartDetailsByCartId(self.fetch_cart_id[0])
+    def decrease_qty(self, name, cartId):
+        cart_detail_service.decreaseQuantity(cartId, name)
+        self.fetch_cart_customer = cart_services.getCartViewByUserId(self.current_customer_id)
         
         # Clear old widgets
         for widget in self.scrollable_cart_frame.winfo_children():
@@ -2465,12 +2432,12 @@ class MainApp():
         # Update total label
         self.total_label.config(text=f"Rp {self.total:,}")
 
-    def remove_item(self, name):
-        cart_detail_service.removeItemFromCart(self.fetch_cart_id[0], name)
-        self.fetch_cart = cart_detail_service.fetchCartDetailsByCartId(self.fetch_cart_id[0])
+    def remove_item(self, name, cartId):
+        cart_detail_service.removeItemFromCart(cartId, name)
+        self.fetch_cart_customer = cart_services.getCartViewByUserId(self.current_customer_id)
         
         # Check if cart is now empty
-        if not self.fetch_cart or len(self.fetch_cart) == 0:
+        if not self.fetch_cart_customer or len(self.fetch_cart_customer) == 0:
             self.view_cart()
             return
         
@@ -2485,7 +2452,7 @@ class MainApp():
         self.total_label.config(text=f"Rp {self.total:,}")
 
     def checkout(self, current_user_id):
-        if not self.fetch_cart or len(self.fetch_cart) == 0:
+        if not self.fetch_cart_customer or len(self.fetch_cart_customer) == 0:
             messagebox.showinfo("Info", "Your cart is empty!")
             return
         
@@ -2493,10 +2460,10 @@ class MainApp():
             messagebox.showinfo("Info", "Your balance is insufficient!")
             return
         
-        for item in self.fetch_cart:
+        for item in self.fetch_cart_customer:
          
-            name = item[1]
-            quantity = item[3]
+            name = item[5]
+            quantity = item[7]
 
             
             product = product_services.getProductByName(name)
@@ -2513,11 +2480,13 @@ class MainApp():
             new_stock = current_stock - quantity
             product_services.updateStock(product[0], new_stock)
 
+            cart_services.checkoutCart(current_user_id, item[0], self.total)
+
         user_services.updateBalance(current_user_id, self.balance - self.total)
 
-        cart_services.checkoutCart(current_user_id, self.fetch_cart_id[0], self.total)
+       
 
-        cart_services.createNewCart(current_user_id) 
+        # cart_services.createNewCart(current_user_id) 
         messagebox.showinfo("Success", "Checkout successful!")
 
         self.home_screen_customer()

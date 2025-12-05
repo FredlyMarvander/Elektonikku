@@ -135,21 +135,40 @@ class CartService:
         result = db_object.fetch_data(query, val)
 
         return result
+    
+    def getCartViewByUserId(self, customer_id):
+        query = """
+        SELECT * FROM Carts
+        JOIN CartDetails 
+        ON Carts.id = CartDetails.cartId
+        WHERE Carts.userId = %s
+        AND transactionDate IS NULL
+        ORDER BY Carts.id DESC
+        """
+
+        val = (customer_id,)
+
+        result = db_object.fetch_data(query, val)
+
+        if result:
+            return result
+        
+        return None
 
     def getCartAndCartDetailsCustomer(self, user_id):
         query = """
-            SELECT 
-                Carts.id, 
-                Carts.transactionDate AS transactionDate,
-                SUM(CartDetails.price) AS totalPrice,
-                COUNT(CartDetails.id) AS itemCount
-            FROM Carts
-            JOIN CartDetails ON Carts.id = CartDetails.cartId
-            WHERE Carts.transactionDate IS NOT NULL 
-            AND Carts.userId = %s
-            GROUP BY Carts.id, Carts.transactionDate
-            ORDER BY Carts.transactionDate DESC;
-            """
+        SELECT 
+            GROUP_CONCAT(DISTINCT Carts.id ORDER BY Carts.id) AS cartIds,
+            Carts.transactionDate AS transactionDate,
+            SUM(CartDetails.price) AS totalPrice,
+            COUNT(CartDetails.id) AS itemCount
+        FROM Carts
+        JOIN CartDetails ON Carts.id = CartDetails.cartId
+        WHERE Carts.transactionDate IS NOT NULL 
+        AND Carts.userId = %s
+        GROUP BY DATE(Carts.transactionDate)
+        ORDER BY DATE(Carts.transactionDate) DESC;
+    """
 
         val = (user_id,)
 
